@@ -1,0 +1,30 @@
+# Tech Lockdown — iOS Web Content Filter — deny list
+#
+# These domains are blocked at iOS's native Web Content Filter layer
+# (Built-in). This layer is enforced by Apple itself and is harder to
+# bypass than DNS — it applies even when DNS is somehow circumvented.
+#
+# The iOS Web Content Filter has a hard cap of ~500 URLs, so it is
+# a curated top-priority subset rather than a comprehensive list.
+# DNS-level blocking (Cloudflare Gateway via WARP) covers everything
+# else.
+#
+# To use: configure these in Tech Lockdown's iOS Web Content Filter
+# wizard. HideDenyListURLs should be set to true so the list itself
+# isn't visible from the device.
+#
+# Total: 13 entries
+#
+wild.io
+duelbits.com
+duel.com
+metawin.com
+rainbet.com
+betstrike.com
+roobet.com
+solcasino.io
+gamdom.com
+stake.com
+bitcasino.io
+hype.bet
+kick.com

@@ -1,0 +1,112 @@
+# Tech Lockdown — macOS Content Filter — additional blocklist
+#
+# These domains are blocked at the macOS Content Filter layer (in
+# addition to the 62k+ apex domains that Cloudflare Gateway handles
+# via Lists). This list covers categories that Cloudflare's gambling
+# category doesn't fully cover:
+#
+#   - "Antidetect" browsers (used to circumvent online casino bans)
+#   - Niche crypto-casino frontends
+#   - Account-spoofing / browser-fingerprint tools
+#
+# To use: paste these into Tech Lockdown's dashboard at
+#   Content Policy -> Custom Block List -> [paste here]
+# or per-platform Web Content Filter when configuring iOS/macOS
+# devices through TLD's wizard.
+#
+# Total: 94 entries
+#
+ebakagames.com
+ibankroll.com
+maincard.io
+jackpot.bet
+whale.io
+bcgame.ads
+bcgame.ad
+stake.mba
+antbrowser.pro
+0detect.com
+1browser.com
+1browser.com/
+1browser.com/
+antidetect.org
+surfinite.com
+hydraheaders.com
+camoufox.com
+rebrowser.net
+logii.in
+0detect.com
+lauth.com.br
+wade.is
+nstbrowser.io
+sessionbox.io
+ghostbrowser.com
+brobrowser.com
+loginways.com
+masq.ai
+masq.browser
+dicloak.com
+multibrowser.com
+samuraibrowser.com
+chebrowser.site
+accovod.com
+aqum.io
+vision-browser.com
+antik-browser.com
+orb.cc
+aezakmi.run
+antbrowser.pro
+indigobrowser.com
+sphere.linken
+ls.app
+alayu.com
+yunlogin.com
+xlogin.org
+yunlark.com
+marketerbrowser.com
+tigerbrowser.com
+vmmask.com
+nestbrowser.com
+hidemyacc.com
+genlogin.com
+supebrowser.com
+genlogin.com
+hidemyacc.com
+maskfog.com
+clonbrowser.com
+geelark.com
+lalicat.com
+ixbrowser.com
+hubstudio.com
+mulogin.com
+vmlogin.com
+morelogin.com
+bitbrowser.net
+undetectable.io
+octobrowser.org
+octobrowser.net
+kameleo.io
+incogniton.com
+dolphin-anty.com
+adspower.com
+gologin.com
+multilogin.com
+cloudbet.com
+rollbit.com
+solcasino.io
+login.yolo.com
+yolo.com
+duelbits.com
+slots.io
+duel.com
+metawin.com
+rainbet.com
+betstrike.com
+wild.io
+hype.bet
+bitcasino.io
+bc.game
+roobet.com
+gamdom.com
+stake.com
+kick.com

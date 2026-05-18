@@ -1,0 +1,1539 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A self-exclusion stack for macOS and iOS — for people with a gambling problem who don't trust themselves</title>
+<meta name="description" content="A defense-in-depth guide for blocking gambling sites and apps on your own devices, designed by someone who needed it and is releasing it anonymously.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Newsreader:opsz,wght,ital@6..72,300..700,0;6..72,300..700,1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:           #f6f1e8;
+  --bg-soft:      #efe8da;
+  --bg-aside:    #ece2cf;
+  --ink:          #2a2620;
+  --ink-soft:     #5a534a;
+  --ink-faint:    #8a8378;
+  --rule:         #d9cfba;
+  --accent:       #3d5a3c;     /* muted forest green */
+  --accent-soft:  #6d8a6c;
+  --warn:         #8a3f1a;     /* burnt sienna for warnings */
+  --code-bg:      #ece4d2;
+  --max:          720px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:         #14110d;
+    --bg-soft:    #1d1814;
+    --bg-aside:   #221c16;
+    --ink:        #ece3d3;
+    --ink-soft:   #b5ab9b;
+    --ink-faint:  #7a7164;
+    --rule:       #3a322a;
+    --accent:     #8fb18d;
+    --accent-soft:#6d8a6c;
+    --warn:       #d28860;
+    --code-bg:    #1a1612;
+  }
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 19px;
+  font-weight: 400;
+  line-height: 1.6;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection { background: var(--accent); color: var(--bg); }
+
+/* ─── Layout ──────────────────────────────────────────────────────── */
+
+.shell {
+  display: grid;
+  grid-template-columns: 280px minmax(0, var(--max));
+  gap: 80px;
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 80px 40px 120px;
+}
+
+.toc {
+  position: sticky;
+  top: 40px;
+  align-self: start;
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+.toc h2 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 16px;
+}
+.toc ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: phase;
+}
+.toc li {
+  margin: 0 0 6px;
+  padding-left: 32px;
+  position: relative;
+  line-height: 1.4;
+}
+.toc li::before {
+  counter-increment: phase;
+  content: counter(phase, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: 1px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-faint);
+  font-feature-settings: 'tnum';
+}
+.toc a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color .2s, border-color .2s;
+}
+.toc a:hover {
+  color: var(--ink);
+  border-color: var(--rule);
+}
+.toc li.active a {
+  color: var(--accent);
+  font-style: italic;
+}
+.toc .toc-aside {
+  list-style: none;
+  margin: 24px 0 0;
+  padding: 24px 0 0;
+  border-top: 1px solid var(--rule);
+  font-size: 13px;
+  color: var(--ink-faint);
+  line-height: 1.5;
+  font-style: italic;
+}
+
+/* ─── Hero ────────────────────────────────────────────────────────── */
+
+.hero {
+  padding: 0 0 56px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 56px;
+}
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 32px;
+}
+.eyebrow span { color: var(--accent); }
+h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 400;
+  font-variation-settings: "opsz" 96, "SOFT" 30;
+  font-size: clamp(36px, 5.4vw, 60px);
+  line-height: 1.04;
+  letter-spacing: -0.015em;
+  margin: 0 0 32px;
+  color: var(--ink);
+}
+h1 em {
+  font-style: italic;
+  font-variation-settings: "opsz" 96, "SOFT" 60;
+  color: var(--accent);
+}
+.lede {
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 22px;
+  line-height: 1.5;
+  font-weight: 300;
+  color: var(--ink-soft);
+  max-width: 620px;
+  margin: 0;
+}
+
+/* ─── Sections ────────────────────────────────────────────────────── */
+
+section {
+  padding: 64px 0;
+  border-bottom: 1px solid var(--rule);
+  counter-increment: section;
+}
+section:last-of-type { border-bottom: none; }
+.no-rule { border-bottom: none; padding-bottom: 0; }
+
+h2 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 400;
+  font-variation-settings: "opsz" 72, "SOFT" 20;
+  font-size: clamp(28px, 3.6vw, 38px);
+  line-height: 1.1;
+  letter-spacing: -0.012em;
+  margin: 0 0 8px;
+  color: var(--ink);
+}
+.section-num {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 20px;
+}
+h3 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 500;
+  font-variation-settings: "opsz" 36;
+  font-size: 22px;
+  line-height: 1.25;
+  margin: 40px 0 10px;
+  color: var(--ink);
+}
+h4 {
+  font-family: 'Newsreader', Georgia, serif;
+  font-weight: 600;
+  font-style: italic;
+  font-size: 19px;
+  margin: 28px 0 8px;
+  color: var(--ink);
+}
+
+p { margin: 16px 0; }
+p.intro { font-size: 21px; line-height: 1.5; color: var(--ink-soft); margin-bottom: 28px; }
+
+a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: opacity .15s;
+}
+a:hover { opacity: 0.7; }
+
+strong { font-weight: 600; color: var(--ink); }
+em { font-style: italic; }
+
+/* ─── Asides / callouts ─────────────────────────────────────────── */
+
+.aside {
+  background: var(--bg-aside);
+  border-left: 3px solid var(--accent);
+  padding: 18px 24px;
+  margin: 28px 0;
+  font-size: 17px;
+  line-height: 1.55;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+.aside .label {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.aside.warn { border-left-color: var(--warn); }
+.aside.warn .label { color: var(--warn); }
+.aside p { margin: 4px 0; }
+.aside p:first-of-type { margin-top: 0; }
+.aside p:last-of-type { margin-bottom: 0; }
+
+/* ─── Code ──────────────────────────────────────────────────────── */
+
+code, pre, kbd {
+  font-family: 'JetBrains Mono', monospace;
+  font-feature-settings: 'liga' 0;
+}
+p code, li code, td code {
+  background: var(--code-bg);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.85em;
+  color: var(--ink);
+}
+pre {
+  background: var(--code-bg);
+  padding: 18px 22px;
+  margin: 24px 0;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink);
+  border: 1px solid var(--rule);
+}
+pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* ─── Lists ─────────────────────────────────────────────────────── */
+
+ul, ol { padding-left: 22px; }
+li { margin: 8px 0; }
+ol.steps {
+  counter-reset: step;
+  list-style: none;
+  padding-left: 0;
+}
+ol.steps > li {
+  counter-increment: step;
+  position: relative;
+  padding-left: 44px;
+  margin: 20px 0;
+}
+ol.steps > li::before {
+  content: counter(step, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: 0.1em;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--accent);
+  font-feature-settings: 'tnum';
+}
+
+/* ─── Figures ───────────────────────────────────────────────────── */
+
+figure {
+  margin: 28px 0;
+  text-align: center;
+}
+figure img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  display: block;
+  margin: 0 auto;
+  background: var(--bg-soft);
+}
+figcaption {
+  font-family: 'Newsreader', Georgia, serif;
+  font-style: italic;
+  font-size: 15px;
+  color: var(--ink-faint);
+  margin-top: 12px;
+  max-width: 540px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.45;
+}
+
+/* ─── Tables ─────────────────────────────────────────────────────── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 24px 0;
+  font-size: 16px;
+}
+th, td {
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+th {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--ink-soft);
+  letter-spacing: 0.02em;
+}
+
+/* ─── Pull quote ─────────────────────────────────────────────────── */
+.pull {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 300;
+  font-variation-settings: "opsz" 72, "SOFT" 50;
+  font-size: clamp(24px, 3.2vw, 32px);
+  line-height: 1.2;
+  font-style: italic;
+  color: var(--ink);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: 32px 0;
+  margin: 40px 0;
+  text-align: left;
+}
+
+/* ─── Bottom matter ──────────────────────────────────────────────── */
+
+footer {
+  margin-top: 96px;
+  padding-top: 32px;
+  border-top: 1px solid var(--rule);
+  font-size: 14px;
+  color: var(--ink-faint);
+  font-style: italic;
+}
+footer p { margin: 6px 0; }
+
+hr.divider {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 48px 0;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────── */
+
+@media (max-width: 960px) {
+  .shell {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 48px 24px 80px;
+  }
+  .toc {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--rule);
+  }
+  body { font-size: 18px; }
+  .lede { font-size: 20px; }
+  pre { font-size: 13px; padding: 14px 16px; }
+}
+
+/* ─── Print ──────────────────────────────────────────────────────── */
+@media print {
+  body { background: white; color: black; font-size: 11pt; }
+  .toc { display: none; }
+  .shell { display: block; padding: 0; max-width: none; }
+  section { page-break-inside: avoid; padding: 24px 0; }
+  pre { border: 1px solid #ccc; }
+  a { color: black; text-decoration: underline; }
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+<!-- TABLE OF CONTENTS -->
+<nav class="toc" aria-label="Table of contents">
+  <h2>The setup</h2>
+  <ol>
+    <li><a href="#intro">Before you start</a></li>
+    <li><a href="#stack">What this stack does</a></li>
+    <li><a href="#what-you-need">What you'll need</a></li>
+    <li><a href="#cloudflare">Cloudflare + Tech Lockdown</a></li>
+    <li><a href="#blocklist">The 62,636-site blocklist</a></li>
+    <li><a href="#warp">WARP &amp; the Enforcer Tool</a></li>
+    <li><a href="#hosts">/etc/hosts, locked</a></li>
+    <li><a href="#dnsforce">dnsforce — the DNS firewall</a></li>
+    <li><a href="#browsers">Browser DoH lock profile</a></li>
+    <li><a href="#ios">iOS configuration</a></li>
+    <li><a href="#lockout-tld">Lock yourself out of Tech Lockdown</a></li>
+    <li><a href="#lockout-cf">Lock yourself out of Cloudflare</a></li>
+    <li><a href="#applivery">Optional — Applivery MDM</a></li>
+    <li><a href="#checks">Sanity checks</a></li>
+    <li><a href="#troubleshooting">When things go wrong</a></li>
+    <li><a href="#urge">When you have an urge right now</a></li>
+    <li><a href="#aftercare">After the setup</a></li>
+    <li><a href="#credits">Credits, license, disclaimers</a></li>
+  </ol>
+  <div class="toc-aside">
+    Released anonymously. Not affiliated with any of the services named here.
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main>
+
+<div class="hero">
+  <p class="eyebrow"><span>● </span>A self-exclusion stack &nbsp;·&nbsp; macOS · iOS &nbsp;·&nbsp; May 2026</p>
+  <h1>A defense-in-depth guide to blocking gambling sites on <em>your own devices</em>, designed for people who don't trust themselves.</h1>
+  <p class="lede">
+    Most "site blockers" can be uninstalled in thirty seconds. That's not a block — that's a speed bump. This guide builds something different: a stack of seven independent layers, each closing a different bypass route, none of which can be undone without hours of deliberate effort. It exists because the person who built it needed it, and is releasing it so other people don't have to figure it out alone.
+  </p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     01 · BEFORE YOU START
+═══════════════════════════════════════════════════════════════════ -->
+<section id="intro">
+  <span class="section-num">§ 01</span>
+  <h2>Before you start</h2>
+
+  <p class="intro">This will take an afternoon. Maybe two. It needs to be done on a clear-headed day, not in the middle of an urge.</p>
+
+  <p>If you've found this page, you probably already know the shape of the problem. Browser extensions get uninstalled. Self-exclusion at one casino gets routed around at the next. Gamban or Bet Blocker gets turned off "just to check one score" and never gets turned back on. The block stops working the moment you decide it should stop working — which is exactly when you most need it not to.</p>
+
+  <p>What follows is a setup that takes that decision away from your future self. It isn't elegant, it isn't a single product, and it isn't free. It's a stack of seven different mechanisms layered on top of each other, each closing a specific bypass route the previous one couldn't cover. To undo it casually is impossible. To undo it deliberately takes hours of focused work — long enough that the urge that motivated you has almost certainly passed.</p>
+
+  <p>A few things to know before you commit:</p>
+
+  <ul>
+    <li><strong>This is software, not therapy.</strong> A locked-down phone has never cured anyone. If you aren't already getting human support — Gamblers Anonymous, a therapist who knows behavioural addictions, an accountability partner, a family member who's allowed to ask — please add that alongside this. There's a list of resources at the bottom of this page.</li>
+    <li><strong>Do this when you're sober and steady.</strong> Not in the middle of a craving, not during a chase, not after a loss. The setup involves entering credentials, signing up for services, and making decisions you can't easily walk back. Pick a quiet morning.</li>
+    <li><strong>Have an accountability partner aware of what you're doing.</strong> Ideally someone who can hold a piece of paper for you (you'll see why). A partner, a sibling, a sponsor, a close friend. Not optional.</li>
+    <li><strong>Back up anything important first.</strong> Locking down DNS and modifying system files is reversible, but the reversal involves Recovery Mode. Better to have a Time Machine backup than to find out later you've locked yourself out of something legitimate.</li>
+    <li><strong>This is for macOS 15 (Sequoia) and iOS 17 or newer.</strong> Older versions will mostly work but a few of the profile keys behave differently. If you're on something much older, the structure still applies but the exact toggle names may move around.</li>
+  </ul>
+
+  <div class="aside">
+    <span class="label">A note on tone</span>
+    <p>This guide is written by someone who needed it. It assumes you're an adult, that you know what you're trying to do, and that you don't need to be talked down to about it. It also won't pretend that any of this is easy or that the technology is doing the hard part — you are.</p>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     02 · WHAT THIS STACK DOES
+═══════════════════════════════════════════════════════════════════ -->
+<section id="stack">
+  <span class="section-num">§ 02</span>
+  <h2>What this stack does</h2>
+
+  <p>The trick to blocking yourself from yourself is to recognise that there's no single chokepoint. A determined version of you — one who's spent the past hour talking yourself into it — will try every angle. So instead of building one big block, this setup builds seven small ones, in series, each watching a different door.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 30%">Layer</th>
+        <th>What it does</th>
+        <th style="width: 30%">What it stops</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>1. Cloudflare Gateway</strong><br><span style="color: var(--ink-faint); font-size: 0.85em">via Tech Lockdown</span></td>
+        <td>62,636 gambling apex domains blocked at the DNS layer for any device using your Cloudflare-routed connection.</td>
+        <td>Casinos, sportsbooks, slot platforms, casual-gambling apps. The bulk of the actual blocking work.</td>
+      </tr>
+      <tr>
+        <td><strong>2. WARP + Enforcer</strong><br><span style="color: var(--ink-faint); font-size: 0.85em">Cloudflare client, locked on</span></td>
+        <td>Tunnels all your Mac's traffic through Cloudflare so the Gateway rules apply. The Enforcer Tool prevents WARP from being disabled or uninstalled.</td>
+        <td>Disabling WARP. Switching DNS to bypass Gateway. Network-switch drops.</td>
+      </tr>
+      <tr>
+        <td><strong>3. /etc/hosts, immutable</strong></td>
+        <td>The same blocklist baked into your Mac's host file, with the system-immutable flag set so it can't be edited or deleted from a running OS.</td>
+        <td>Fallback if WARP drops momentarily. Defence-in-depth for offline DNS bypasses.</td>
+      </tr>
+      <tr>
+        <td><strong>4. dnsforce</strong><br><span style="color: var(--ink-faint); font-size: 0.85em">PF firewall + watchdog</span></td>
+        <td>Kernel-level packet filter that blocks DNS-over-HTTPS, DNS-over-TLS, and DNS-over-QUIC to every public provider. Allows plain DNS only to your current system resolvers. Self-heals across network switches.</td>
+        <td>The big bypass: browsers with DoH enabled, which ignore your hosts file entirely. Closes that hole at the OS layer.</td>
+      </tr>
+      <tr>
+        <td><strong>5. Browser DoH profile</strong><br><span style="color: var(--ink-faint); font-size: 0.85em">configuration profile</span></td>
+        <td>macOS configuration profile that disables DoH and locks proxy settings to <code>direct</code> in 33 browser variants. Protected by a profile removal password you'll generate and discard.</td>
+        <td>Re-enabling DoH inside a browser. Adding a proxy or VPN extension. Installing a different browser to bypass.</td>
+      </tr>
+      <tr>
+        <td><strong>6. Tech Lockdown profile lock</strong></td>
+        <td>The Tech Lockdown account itself is gated behind 888 random characters plus a passcode you give to your accountability partner. You can't log in and change settings without going through them.</td>
+        <td>The "I'll just turn it off for a minute" route through the management UI.</td>
+      </tr>
+      <tr>
+        <td><strong>7. Cloudflare 2FA</strong></td>
+        <td>2FA on Cloudflare with a hardware key or TOTP, recovery codes given away. You can't disable the Gateway rules without going through your accountability partner.</td>
+        <td>Logging into Cloudflare and deleting the block rule.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p class="pull">Each layer is designed so that bypassing it would take such a long time, that you don't even want to try.</p>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     03 · WHAT YOU'LL NEED
+═══════════════════════════════════════════════════════════════════ -->
+<section id="what-you-need">
+  <span class="section-num">§ 03</span>
+  <h2>What you'll need</h2>
+
+  <p>The bulk of the cost here goes to Tech Lockdown, which provides the management surface, the WARP+Enforcer installer, and the iOS profile generator. Cloudflare is free at the tier we use. Applivery is optional, and even when you use it, the 14-day trial is enough to set everything up and then cancel.</p>
+
+  <table>
+    <thead>
+      <tr><th>Service</th><th>Role</th><th>Cost</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Cloudflare</td><td>DNS gateway, hosts the 62k-domain blocklist</td><td>Free</td></tr>
+      <tr><td><a href="https://techlockdown.com/pricing">Tech Lockdown</a></td><td>Management UI, WARP installer + Enforcer, signed iOS profile, account lockout features</td><td>$9.99/month billed annually (free trial available)</td></tr>
+      <tr><td><a href="https://dashboard.applivery.io/">Applivery</a> <em>(optional)</em></td><td>MDM enrollment, profile removal password policy, Recovery Lock command</td><td>From €3/device/month on the <em>Advanced</em> plan (annual billing) — 14-day free trial is enough to set everything up and cancel</td></tr>
+    </tbody>
+  </table>
+
+  <p>You'll also need:</p>
+
+  <ul>
+    <li>A Mac (Apple Silicon or Intel; macOS 15 or newer recommended).</li>
+    <li>An iPhone if you want the iOS layer.</li>
+    <li>An accountability partner — someone who will hold a passcode or a recovery code for you.</li>
+    <li>About <strong>3 hours</strong> for the Mac setup. About <strong>30 minutes</strong> for iOS.</li>
+    <li>A scrap of paper and a pen. Genuinely. You'll be writing things down to give away or destroy.</li>
+  </ul>
+
+  <p>The author of this guide is not affiliated with Cloudflare, Tech Lockdown, or Applivery. They're named here because, after trying every option on the market, these are the three that worked. If something better appears, swap it in — the architecture matters more than the brand.</p>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     04 · CLOUDFLARE + TECH LOCKDOWN
+═══════════════════════════════════════════════════════════════════ -->
+<section id="cloudflare">
+  <span class="section-num">§ 04</span>
+  <h2>Cloudflare + Tech Lockdown</h2>
+
+  <p>The first thing to set up is the brain of the stack: Cloudflare Gateway, managed through Tech Lockdown's wizard. Tech Lockdown is a thin, opinionated UI on top of Cloudflare Zero Trust — they don't run the DNS infrastructure themselves; they orchestrate Cloudflare on your behalf. This is good, because Cloudflare's free tier handles all the actual traffic.</p>
+
+  <h3>Sign up for both</h3>
+
+  <ol class="steps">
+    <li>Create a Cloudflare account at <a href="https://dash.cloudflare.com/sign-up">dash.cloudflare.com/sign-up</a>. Use a real email you have access to but that you can later forget the password for.</li>
+    <li>Inside Cloudflare, navigate to <em>Zero Trust</em> from the left sidebar. You'll be asked to name your "team" — pick any name. The free plan covers up to 50 users; you're one of them.</li>
+    <li>Sign up for Tech Lockdown at <a href="https://techlockdown.com/pricing">techlockdown.com</a> and start the free trial. You can cancel later if you don't keep using it — but note that the Mac Enforcer Tool, the signed iOS profile, and the account-lock features all require an active subscription, so plan for the ~$10/month if you want the full stack to keep working long-term. The Cloudflare lists and rules you create stay in place either way.</li>
+  </ol>
+
+  <h3>Connect them</h3>
+
+  <p>Tech Lockdown's getting-started flow walks you through linking your Cloudflare account: <a href="https://help.techlockdown.com/hc/en-us/categories/33568941298708-Getting-Started">help.techlockdown.com → Getting Started</a>. Follow that. It involves generating a Cloudflare API token with Zero Trust scope and pasting it into Tech Lockdown. Don't skip a step — the connection is what makes everything downstream work.</p>
+
+  <p>When you land on the Tech Lockdown dashboard for the first time, you'll see a <em>Setup Progress</em> checklist on the right-hand side with five steps: <strong>Link Cloudflare Account → Create Content Policy → Connect Devices to your Content Policy → Customize Profile Locking → Improve Blocking &amp; Bypass Prevention</strong>. The checklist mirrors the order of this guide. Tick through it.</p>
+
+  <figure>
+    <img src="screenshots/tld-dashboard.png" alt="Tech Lockdown dashboard showing the DNS traffic chart on the left and the Setup Progress checklist on the right with five steps.">
+    <figcaption>Tech Lockdown dashboard. The <em>Setup Progress</em> panel on the right (Link Cloudflare Account → … → Improve Blocking &amp; Bypass Prevention) walks the same path this guide does. The traffic chart on the left starts populating once WARP is connected and devices are routed through Cloudflare.</figcaption>
+  </figure>
+
+  <div class="aside">
+    <span class="label">Where things live in the Tech Lockdown dashboard</span>
+    <p>Left sidebar: <em>Dashboard</em> (overview), <em>Content Policy</em> (block/allow rules), <em>Device Setup</em>, <em>Activity</em> (DNS query log), <em>Tools</em> (the page where you download WARP and the Enforcer), <em>Config Generator</em> (the wizard that produces the signed iOS profile), <em>Settings</em>, <em>Guides</em>. Top right is the <em>Locked / Unlocked</em> indicator — once you've set up Profile Lock, click that pill to unlock. <em>Settings</em> has nine subsections worth knowing about: Profile, Locking Preferences, Users (use this to add an accountability partner as a co-admin if you want them to be able to make policy changes themselves), Subscription &amp; Billing, Cloudflare Connection, Routers, Traffic Logging, App Preferences, Certificates.</p>
+  </div>
+
+  <h3>iOS configuration tabs</h3>
+
+  <p>Once connected, Tech Lockdown will walk you through configuring your iOS device. There are five tabs: <em>Apps</em>, <em>General</em>, <em>Network</em>, <em>Config Preferences</em>, and <em>Web</em>. The settings to flip away from default are below — adjust them as needed for your specific situation, but the screenshots show what worked.</p>
+
+  <figure>
+    <img src="screenshots/tld-ios-network.png" alt="Tech Lockdown iOS Config — Network tab, with Enforce DNS Settings toggled on and Modifying Personal Hotspot allowed.">
+    <figcaption>iOS Config → Network. <strong>Enforce DNS Settings ON</strong> with "Home" as the DNS profile. <strong>Allow modifying Personal Hotspot settings ON</strong>. <strong>Force WiFi Use OFF</strong>.</figcaption>
+  </figure>
+
+  <p>Four things to call out:</p>
+
+  <ul>
+    <li><strong>Enforce DNS Settings ON.</strong> This is the whole point. It pins the device to Cloudflare's encrypted DNS gateway and uses <code>ProhibitDisablement</code> to prevent you from turning the DNS profile off in iOS Settings. This is the iOS layer's main job.</li>
+    <li><strong>Allow modifying Personal Hotspot ON.</strong> Counter-intuitive, but: if you ever need to share your iPhone's connection to a laptop for a captive portal or a tethering situation, you'll want this enabled. The blocking still applies because the DNS enforcement travels with the device, not with the connection.</li>
+    <li><strong>Force WiFi Use OFF.</strong> If your home Wi-Fi has a problem and you fall back to cellular, you still need internet. This makes the iOS profile work everywhere, not just on a specific network.</li>
+    <li><strong>Prevent Adding New VPNs ON</strong> (further down the Network tab — scroll). This is the critical one. Without it, you could install Mullvad, ProtonVPN, NordVPN, or any free VPN from the App Store and tunnel your traffic around Cloudflare entirely — every layer of the stack ignored in a tap. With it on, iOS refuses to install or activate new VPN configurations; only the managed Cloudflare DNS profile is allowed to handle traffic. Turn this on.</li>
+  </ul>
+
+  <figure>
+    <img src="screenshots/tld-ios-config-preferences.png" alt="Tech Lockdown iOS Config — Config Preferences tab, with Removal Protection and Hide Blocked URLs both enabled.">
+    <figcaption>iOS Config → Config Preferences. <strong>Removal Protection ON</strong> (Uninstall Protected). <strong>Hide Blocked URLs ON</strong>.</figcaption>
+  </figure>
+
+  <ul>
+    <li><strong>Removal Protection / Uninstall Protected.</strong> The iOS profile is installed with <code>PayloadRemovalDisallowed=true</code>, meaning iOS itself refuses to remove it. There is no password prompt — the option to remove simply isn't there. The only way to undo it is to factory-reset the phone, which is loud enough that you'd notice yourself doing it.</li>
+    <li><strong>Hide Blocked URLs ON.</strong> When the iOS Web Content Filter blocks a domain, the filter itself contains the list of blocked URLs. By default, you can read that list in Settings — which is a feature for parents managing kids' devices but a problem for someone managing themselves. Hiding it means you can't accidentally turn the filter into a "best gambling sites I've forgotten about" reference.</li>
+  </ul>
+
+  <h3>macOS configuration tabs</h3>
+
+  <figure>
+    <img src="screenshots/tld-macos-network.png" alt="Tech Lockdown macOS Config — Network tab, with Enforce DNS Settings toggled off.">
+    <figcaption>macOS Config → Network. <strong>Enforce DNS Settings OFF</strong>. We handle this differently on macOS — see below.</figcaption>
+  </figure>
+
+  <p>On macOS, leave <em>Enforce DNS Settings</em> <strong>off</strong>. The reason is technical: macOS handles DNS profile enforcement less reliably than iOS, especially across WiFi/cellular switches and captive portals. Instead, on the Mac we rely on WARP (which routes traffic to Cloudflare Gateway anyway), the locked <code>/etc/hosts</code> file, and the <code>dnsforce</code> PF firewall covered in <a href="#dnsforce">Section 08</a>. Together, those three give better results than the profile-based DNS enforcement does on macOS.</p>
+
+  <figure>
+    <img src="screenshots/tld-macos-config-preferences.png" alt="Tech Lockdown macOS Config — Config Preferences tab, with Removal Protection enabled.">
+    <figcaption>macOS Config → Config Preferences. <strong>Removal Protection ON</strong> (Uninstall Protected).</figcaption>
+  </figure>
+
+  <figure>
+    <img src="screenshots/tld-macos-guest-account.png" alt="Tech Lockdown macOS Config — Guest Account setting, toggled off.">
+    <figcaption>macOS Config → General. <strong>Allow Mac Guest Account OFF.</strong></figcaption>
+  </figure>
+
+  <p>One macOS-specific setting worth calling out: <strong>disable the Guest Account.</strong> Without this, a logged-out version of you can boot into the macOS Guest user, which doesn't have any of your configuration profiles applied. That's an obvious bypass. Turning the Guest Account off closes it.</p>
+
+  <p>Tech Lockdown also lets you add a per-platform <em>Custom Block List</em> — a small set of domains that the macOS Content Filter blocks at the system layer, separately from the 62k Cloudflare list. The list used in the original setup is in <code>reference/tld-macos-extra-blocklist.txt</code>. It covers categories the gambling-DNS list doesn't fully cover: "antidetect" browsers, niche crypto-casino frontends, browser-fingerprint spoofing tools, and a handful of streaming sites (like Kick) that host livestreamed slot content. Paste those into Tech Lockdown's interface, edit to taste.</p>
+
+  <div class="aside">
+    <span class="label">Why Kick</span>
+    <p>Kick is a livestreaming platform that openly courts gambling sponsorships and hosts a large amount of slot-stream content. Even if you'd never go to a casino directly, twenty minutes of someone else playing slots on Kick is functionally the same gateway. Blocking it on iOS at the app level (bundle IDs <code>com.kick.mobile</code> and <code>com.kick.streaming</code>) and on macOS at the DNS level handles both sides.</p>
+  </div>
+
+  <h3>The Apps and Web tabs (iOS only)</h3>
+
+  <p>The other two iOS tabs are where the per-app and per-URL blocklists live. They're independent from the Cloudflare DNS layer — they kick in at the iOS kernel level even if DNS resolution somehow gets through.</p>
+
+  <ul>
+    <li><strong>Apps tab.</strong> Paste in the bundle IDs from <code>reference/tld-ios-blocked-apps.txt</code>. At minimum, add <code>com.kick.mobile</code> and <code>com.kick.streaming</code> (the streaming platform that pipes slot content), plus any specific gambling apps you've used in the past. Bundle IDs for unlisted apps can be found by searching <a href="https://apps.apple.com">apps.apple.com</a> for the app name and copying the numeric ID + reverse-domain identifier.</li>
+    <li><strong>Web tab (Web Content Filter).</strong> A high-priority list of URLs the iOS native content filter blocks <em>regardless of DNS</em>. Paste in <code>reference/tld-ios-web-content-filter.txt</code> for a starter set — about a dozen of the most-visited gambling domains. This is your belt-and-braces for iOS: if DNS is ever somehow circumvented, the URL filter still catches the obvious targets.</li>
+  </ul>
+
+  <p>The <em>General</em> tab on iOS has a handful of toggles that are mostly fine left at default. Worth flipping: turn off Safari's <em>private browsing</em> if you've ever used it as an end-run around content filters, and consider disabling <em>App installations</em> if you're prone to installing a new sportsbook app every time you find one. Both can stay on if you don't actually need them locked down.</p>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     05 · THE 62,636-SITE BLOCKLIST
+═══════════════════════════════════════════════════════════════════ -->
+<section id="blocklist">
+  <span class="section-num">§ 05</span>
+  <h2>The 62,636-site blocklist</h2>
+
+  <p>This is the layer that does the bulk of the actual blocking. Tech Lockdown's built-in rule editor can handle a few hundred domains comfortably, but it isn't designed for the comprehensive list of every gambling apex domain on the public internet. For that we go directly to the underlying Cloudflare Gateway and use a feature called <em>Lists</em>.</p>
+
+  <h3>How Cloudflare Lists work</h3>
+
+  <p>A <a href="https://developers.cloudflare.com/cloudflare-one/account-limits/">Cloudflare Zero Trust account on the free tier</a> can have up to 100 Lists of up to 1,000 entries each. A single DNS rule can reference all of them via a Wireshark-style expression. With 62,636 apex domains spread across 63 lists, the expression that combines them comes out to about 4 KB — well under Cloudflare's 140 KB expression cap.</p>
+
+  <p>The matcher we use is <code>any(dns.domains[*] in $list_uuid)</code>, repeated once per list with <code>or</code> between them. The <code>dns.domains[*]</code> field covers the apex domain <em>and</em> every subdomain — so if <code>stake.com</code> is in the list, then <code>www.stake.com</code>, <code>cdn.stake.com</code>, and any other subdomain are all matched without needing separate entries. This is what makes 62,636 apex entries cover effectively the entire publicly-visible gambling internet.</p>
+
+  <div class="aside">
+    <span class="label">Where things live in the Cloudflare Zero Trust dashboard</span>
+    <p>Cloudflare reorganised its Zero Trust UI in 2026. What used to be "Gateway → Firewall policies" is now <strong>Traffic policies → Firewall policies</strong>, and what used to be inline "Lists" is now <strong>Reusable components → Lists</strong>. The script in this bundle goes directly to the API and doesn't care about the UI, but if you ever need to view or hand-edit, the paths are:</p>
+    <p>• <strong>Your 63 lists:</strong> <em>Zero Trust → Reusable components → Lists</em>. Each shows 1,000 hostname entries.</p>
+    <p>• <strong>The umbrella block rule:</strong> <em>Zero Trust → Traffic policies → Firewall policies → DNS tab</em>. The rule's name is "Self-Exclusion Blocklist (umbrella rule)".</p>
+    <p>• <strong>API tokens:</strong> the cog icon at the top of the Cloudflare account dropdown → <em>API Tokens</em>. Not under Zero Trust.</p>
+  </div>
+
+  <figure>
+    <img src="screenshots/cf-lists.png" alt="Cloudflare Zero Trust Reusable components Lists page showing 63 'Self-Exclusion Blocklist' lists, each typed Hostnames with 1000 entries.">
+    <figcaption>Cloudflare Zero Trust → Reusable components → Lists, after the migration script has run. 63 hostname lists, 1,000 entries each. The "READ ONLY" badge appears when you've also enabled API/Terraform read-only mode (see <a href="#lockout-cf">§ 12</a>).</figcaption>
+  </figure>
+
+  <figure>
+    <img src="screenshots/cf-firewall-policies.png" alt="Cloudflare Zero Trust Traffic policies Firewall policies page on the DNS tab, showing the block-rules table.">
+    <figcaption>Cloudflare Zero Trust → Traffic policies → Firewall policies → <strong>DNS</strong> tab. The umbrella rule created by the script lives here; click into it to see the long OR-chained <code>any(dns.domains[*] in $list)</code> expression.</figcaption>
+  </figure>
+
+  <h3>Create a Cloudflare API token</h3>
+
+  <p>The script in <code>cloudflare/migrate_to_lists.py</code> needs an API token with Zero Trust edit permissions to create the lists and rule. Here's how to make one:</p>
+
+  <ol class="steps">
+    <li>In Cloudflare, click your profile icon (top right) → <em>My Profile</em> → <em>API Tokens</em>.</li>
+    <li>Click <strong>Create Token</strong>, then scroll to <em>Custom token</em> and click <strong>Get started</strong>.</li>
+    <li>Name it something obvious: <em>"self-exclusion migration token (delete after use)"</em>.</li>
+    <li>Add one permission: <em>Account → Zero Trust → Edit</em>.</li>
+    <li>Under <em>Account Resources</em>, scope it to your Zero Trust account.</li>
+    <li>Continue to summary, then <strong>Create Token</strong>. Copy the token shown <em>once</em> — you can't read it again afterwards.</li>
+  </ol>
+
+  <p>You'll also need your Cloudflare account ID. It's in the URL when you're on the Cloudflare dashboard — the long hex string between <code>/accounts/</code> and the next slash. Or it's shown in the right-hand sidebar of any Zero Trust page.</p>
+
+  <h3>Run the migration script</h3>
+
+  <p>The script lives at <code>cloudflare/migrate_to_lists.py</code> in this bundle. Edit the two placeholders near the top:</p>
+
+  <pre><code>CF_ACCOUNT_ID = "PASTE_YOUR_CLOUDFLARE_ACCOUNT_ID_HERE"
+CF_API_TOKEN  = "PASTE_YOUR_CLOUDFLARE_API_TOKEN_HERE"</code></pre>
+
+  <p>If you've never used Python on this Mac before, the next two subsections walk you through it. If you're an engineer, skip ahead to <a href="#cf-run">the four commands</a>.</p>
+
+  <h4>If you've never used Python before</h4>
+
+  <p>Python 3 is the language the migration script is written in. macOS ships with a Python 3 already (used by the system), and that's enough — you do not need to install anything else if you don't want to. Open the Terminal app (<em>Applications → Utilities → Terminal</em>, or press ⌘-Space and type "Terminal") and check:</p>
+
+  <pre><code>python3 --version
+# Expected output, something like:
+# Python 3.9.6   (or any 3.x — 3.9 or newer is fine)</code></pre>
+
+  <p>If you see a version number, you have Python; jump to "<em>Install the one dependency</em>" two paragraphs below. If you get "command not found" or a popup asking you to install the Command Line Developer Tools, click <em>Install</em> in the popup, wait five minutes for it to finish, then re-run <code>python3 --version</code>.</p>
+
+  <p>If you'd rather have a newer, cleaner Python install (not strictly required), the two easiest paths are:</p>
+
+  <ul>
+    <li><strong>The official installer.</strong> Download the <em>"macOS 64-bit universal2 installer"</em> from <a href="https://www.python.org/downloads/macos/">python.org/downloads/macos</a>. Run it. Click through. After it finishes, close and reopen Terminal so the new <code>python3</code> is picked up.</li>
+    <li><strong>Homebrew</strong> (if you're already using it): <code>brew install python</code>. If you don't know what Homebrew is, skip this — the system Python or the python.org installer is simpler.</li>
+  </ul>
+
+  <h4>Install the one dependency</h4>
+
+  <p>The script needs one external library called <code>requests</code> (used to talk to Cloudflare's API). Install it with <code>pip</code>, which ships alongside Python:</p>
+
+  <pre><code>pip3 install --user requests
+# or, on some macOS setups:
+python3 -m pip install --user requests</code></pre>
+
+  <p>The <code>--user</code> flag installs the library just for your user, no sudo / admin password needed. On the most recent macOS / Python combinations, pip may complain about an "externally-managed environment" and refuse the install. If that happens, the fix is one extra flag:</p>
+
+  <pre><code>pip3 install --user --break-system-packages requests</code></pre>
+
+  <p>That flag sounds scarier than it is — it just tells pip "yes, I really mean to install this into the user-Python folder." For a one-shot dependency like this, it's safe.</p>
+
+  <p id="cf-run">Now, from the <code>cloudflare/</code> directory inside this bundle (use <code>cd</code> to navigate there — if you don't know the path, drag the <code>cloudflare</code> folder into Terminal after typing "<code>cd&nbsp;</code>" and macOS will fill in the path for you), run the script:</p>
+
+  <pre><code># Preview what cleanup would do, without changing anything
+python3 migrate_to_lists.py --phase cleanup --dry-run
+
+# If the preview looked sane, run everything end-to-end (creates 63 lists + the umbrella rule)
+python3 migrate_to_lists.py --phase all --yes</code></pre>
+
+  <p>The full run takes 3–5 minutes on a typical home connection. You'll see live progress like <code>[lists]  17/63 ✓ Self-Exclusion Blocklist 0017 → 8a3f… (1.2/s)</code> as each list is created.</p>
+
+  <p>The script runs in three phases, each independently resumable:</p>
+
+  <ol>
+    <li><strong>cleanup</strong> — Deletes any inline-domain rules left over from previous attempts (detected by signature, not by name).</li>
+    <li><strong>lists</strong> — Creates 63 Cloudflare Lists of up to 1,000 apex domains each from <code>apex_only.txt</code>. Runs in parallel with backoff on rate limits.</li>
+    <li><strong>rule</strong> — Creates one DNS Block rule named <em>"Self-Exclusion Blocklist (umbrella rule)"</em> with an expression referencing all 63 lists OR'd together.</li>
+  </ol>
+
+  <p>State is persisted in <code>.cf_migration_state.json</code> in the working directory, so if anything fails partway through you can re-run safely. Expect the whole run to take 3–5 minutes on a normal connection.</p>
+
+  <h3>Verify the block is live</h3>
+
+  <p>Wait two minutes for Cloudflare to propagate, then test:</p>
+
+  <pre><code>dig +short stake.com @1.1.1.1
+# This bypasses Cloudflare Gateway and goes to public DNS.
+# You'll see real IPs. That's expected — we haven't installed WARP yet.
+
+# Once WARP is installed (next section), this same query through
+# the system resolver should return 0.0.0.0 or a Cloudflare block response.</code></pre>
+
+  <h3>Delete the token and the script</h3>
+
+  <p>Once the lists and rule are in place, the API token has done its job. <strong>Delete it immediately:</strong></p>
+
+  <ol class="steps">
+    <li>Cloudflare → My Profile → API Tokens → find your token → <em>Roll</em> or <em>Delete</em>.</li>
+    <li>Remove the script from your Mac (<code>rm -rf cloudflare/</code>), or at least clear the credentials from the file.</li>
+  </ol>
+
+  <p>Why? The token has edit permissions on your Zero Trust account. As long as it exists, a future-you who finds it lying around in <code>~/Downloads</code> can use it to delete the entire blocklist in three lines of Python. Burning it removes that option.</p>
+
+  <div class="aside">
+    <span class="label">A note on the blocklist itself</span>
+    <p>The 62,636 entries in <code>apex_only.txt</code> are public, well-known gambling apex domains aggregated and deduplicated from multiple community-maintained blocklists. There's no proprietary or sensitive data in the list. You're free to inspect it, filter it, or add to it before running the script. The contents update slowly — gambling operators rebrand and acquire new domains constantly, but the apex-only approach means a single entry covers every subdomain forever, which buys a lot of inertia.</p>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     06 · WARP & THE ENFORCER TOOL
+═══════════════════════════════════════════════════════════════════ -->
+<section id="warp">
+  <span class="section-num">§ 06</span>
+  <h2>WARP &amp; the Enforcer Tool</h2>
+
+  <p>Cloudflare's WARP is a tiny VPN-style client that routes your Mac's traffic through Cloudflare's edge. Tech Lockdown uses it as the delivery mechanism for the DNS rule we just created — once WARP is connected to your team, every DNS lookup on the Mac flows through the Gateway rule, and gambling domains start returning a block response instead of a real IP.</p>
+
+  <p>By itself, WARP is removable. The <em>Enforcer Tool</em> is the second piece: a small launch daemon Tech Lockdown ships that watches WARP, auto-restarts it on network changes, and prevents the uninstall path. Together they form a single managed tunnel that survives reboots, network switches, and casual attempts to turn it off.</p>
+
+  <h3>Install both, in order</h3>
+
+  <ol class="steps">
+    <li>In the Tech Lockdown dashboard, go to <em>Tools</em> in the left sidebar. The page opens to a "Select a Device" step — pick <em>Mac</em>. Three Mac Tools appear: <strong>Config Generator</strong> (the iOS/macOS profile wizard), <strong>WARP Enforcer</strong>, and <strong>Config Presets</strong>. Click <strong>WARP Enforcer</strong>.
+
+  <figure>
+    <img src="screenshots/tld-tools-mac.png" alt="Tech Lockdown Tools page with Mac selected, showing three tiles: Config Generator, WARP Enforcer, and Config Presets.">
+    <figcaption>Tools → select <em>Mac</em> → three Mac-specific tiles appear below.</figcaption>
+  </figure>
+    </li>
+    <li>The WARP Enforcer page shows three steps with download buttons. Click <strong>Download Enforcer Tool</strong> — saves the <code>Tld_Cloudflare_Enforcer_signed_*.pkg</code> to your Downloads folder.
+
+  <figure>
+    <img src="screenshots/tld-warp-enforcer.png" alt="Tech Lockdown WARP Enforcer page with Install/Uninstall tabs, Step 1 'Download the Cloudflare WARP Enforcer tool' and an orange Download Enforcer Tool button.">
+    <figcaption>Tools → Mac → WARP Enforcer. The <em>Install</em> tab walks through Download → Open from Downloads → Run installer. The <em>Uninstall</em> tab next to it is the legitimate undo path — which after Profile Lock requires you to unlock first.</figcaption>
+  </figure>
+    </li>
+    <li>Separately, install Cloudflare's WARP client. The official downloader is at <a href="https://1.1.1.1">1.1.1.1</a>, or use the link Tech Lockdown surfaces inline (Tech Lockdown ships a known-good build named like <code>WARP_2026.4.1350.0.pkg</code>).</li>
+    <li>Install WARP first. Double-click the WARP <code>.pkg</code>, follow the standard macOS installer flow.</li>
+    <li>After it installs, sign in to your Tech Lockdown / Cloudflare team. The WARP menu bar icon should turn from grey to filled-blue when connected.</li>
+    <li>Now install the Enforcer Tool <code>.pkg</code>. It runs silently — no UI. It registers a launch daemon under <code>/Library/LaunchDaemons/</code> that watches WARP.</li>
+  </ol>
+
+  <div class="aside warn">
+    <span class="label">If macOS Gatekeeper blocks the installer</span>
+    <p>On recent macOS versions, double-clicking the Enforcer <code>.pkg</code> sometimes produces a "could not verify is free of malware" dialog rather than launching the installer. This is expected — the Tech Lockdown installers are signed, but Gatekeeper occasionally over-blocks anything not Mac-App-Store-distributed. The fix takes thirty seconds:</p>
+    <p>1. In the warning dialog, click <em>Done</em> (do <strong>not</strong> click "Move to Trash"). 2. Open <em>System Settings → Privacy &amp; Security</em>. 3. Scroll to the <em>Security</em> section near the bottom. You'll see "<code>Tld_Cloudflare_Enforcer…</code> was blocked to protect your Mac." 4. Click <em>Open Anyway</em>. Authenticate. Click <em>Open Anyway</em> again in the second dialog. The installer then runs normally. Same routine if WARP itself ever triggers the same warning.</p>
+  </div>
+
+  <h3>Verify</h3>
+
+  <p>Open Terminal and run:</p>
+
+  <pre><code># WARP should report "Status: Connected"
+warp-cli status
+
+# A gambling apex domain should now resolve to a block response
+dig +short stake.com</code></pre>
+
+  <p>If <code>dig</code> returns <code>0.0.0.0</code> or a Cloudflare IP that doesn't actually serve the site, the block is live.</p>
+
+  <h3>If WARP gets stuck in an "IPC Error" state</h3>
+
+  <p>This sometimes happens after the WARP daemon updates or after a long sleep. The fix is one command:</p>
+
+  <pre><code>sudo launchctl kickstart -k system/com.cloudflare.1dot1dot1dot1.macos.warp.daemon</code></pre>
+
+  <p>That restarts the WARP daemon cleanly. The Enforcer Tool will normally do this for you automatically, but the manual command is good to know.</p>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     07 · /ETC/HOSTS, LOCKED
+═══════════════════════════════════════════════════════════════════ -->
+<section id="hosts">
+  <span class="section-num">§ 07</span>
+  <h2>/etc/hosts, locked</h2>
+
+  <p>The <code>/etc/hosts</code> file on macOS is the oldest form of DNS in the world: a flat text file that maps hostnames to IPs, consulted before any network DNS query. Whatever's in there wins over whatever Cloudflare or your local resolver would otherwise return.</p>
+
+  <p>We use it as a defence-in-depth layer underneath WARP. If WARP momentarily drops, the system falls back to whatever DNS your network is using — and we don't want that fallback to suddenly let you onto Stake.com because cellular handover took 800 ms. The hosts file plugs that gap by hardcoding every gambling apex to <code>0.0.0.0</code> regardless of what DNS says.</p>
+
+  <p>The bundled <code>macos/hosts</code> file is a 4.4 MB sinkhole hosts file containing the same set of gambling apex domains used by the Cloudflare lists, with both IPv4 and IPv6 sinkhole entries. It's safe to use as-is.</p>
+
+  <h3>Install it</h3>
+
+  <ol class="steps">
+    <li>Back up your current hosts file: <code>sudo cp /etc/hosts /etc/hosts.backup</code>.</li>
+    <li>Decide whether to replace or append:
+      <ul>
+        <li><strong>Replace</strong> (cleaner — if your existing hosts file only has the default Apple entries):<br><code>sudo cp macos/hosts /etc/hosts</code></li>
+        <li><strong>Append</strong> (if you have other custom entries you want to preserve):<br><code>sudo sh -c 'cat macos/hosts &gt;&gt; /etc/hosts'</code></li>
+      </ul>
+    </li>
+    <li>Flush the DNS cache so the new entries take effect:<br>
+      <code>sudo dscacheutil -flushcache &amp;&amp; sudo killall -HUP mDNSResponder</code></li>
+  </ol>
+
+  <h3>Lock it</h3>
+
+  <p>Now apply the system-immutable and user-immutable flags. This makes the file refuse to be modified or deleted by <em>any</em> user — including root — until you remove the flags by booting into Recovery Mode.</p>
+
+  <pre><code>cd macos
+sudo ./lock_hosts.sh</code></pre>
+
+  <p>The script verifies the lock by attempting (and failing) to append to the file and to delete it. If both attempts are refused, it prints <code>✓ /etc/hosts is now LOCKED</code>.</p>
+
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     08 · DNSFORCE
+═══════════════════════════════════════════════════════════════════ -->
+<section id="dnsforce">
+  <span class="section-num">§ 08</span>
+  <h2>dnsforce — the DNS firewall</h2>
+
+  <p>Everything above this layer assumes that your apps actually <em>use</em> the system's DNS resolver. The problem is that modern browsers don't, by default — Chrome, Firefox, Edge, Brave, Opera, and most of their forks ship with <em>DNS-over-HTTPS</em> (DoH) enabled, which means they bypass <code>/etc/hosts</code> entirely and resolve domain names by talking encrypted HTTPS to whichever DoH provider they prefer. Cloudflare's <code>1.1.1.1</code> over DoH, Google's <code>8.8.8.8</code> over DoH, NextDNS, AdGuard — there are dozens.</p>
+
+  <p>If you don't close this hole, the entire setup above is a façade. Chrome will happily resolve <code>stake.com</code> through Cloudflare's DoH endpoint and ignore everything you've done.</p>
+
+  <p><code>dnsforce</code> is the layer that closes it. It's a small set of <a href="https://en.wikipedia.org/wiki/PF_(firewall)">PF (packet filter)</a> rules — the same kernel firewall that macOS uses for AirDrop, AirPlay, and Apple's own anchor system — plus a daemon and a watchdog. The rules do four things:</p>
+
+  <ul>
+    <li><strong>Allow plain DNS (port 53) only to your current system resolvers.</strong> The list of allowed resolvers updates automatically when you switch networks (WiFi → cellular → hotspot → airport WiFi → home VPN).</li>
+    <li><strong>Block DNS-over-TLS (port 853)</strong> outright.</li>
+    <li><strong>Block DNS-over-QUIC (UDP port 8853)</strong> outright.</li>
+    <li><strong>Block DNS-over-HTTPS (port 443)</strong> to a comprehensive list of public providers: Cloudflare, Google, Quad9, AdGuard, NextDNS, Mullvad, ControlD, OpenDNS, CleanBrowsing, DNS.SB, LibreDNS, Yandex, DNSPod, Alibaba, Comodo, Verisign, Hurricane Electric — about 80 known endpoints.</li>
+  </ul>
+
+  <p>On top of that, a watchdog daemon resurrects the main daemon if anything tries to unload it with <code>launchctl bootout</code>. And on top of <em>that</em>, every file in the stack is locked with <code>chflags schg</code>, the same immutable flag we applied to <code>/etc/hosts</code>.</p>
+
+  <h3>Install</h3>
+
+  <p>The bundled <code>macos/dnsforce/setup.sh</code> is a one-shot script that runs three sub-scripts in sequence and asks for confirmation once:</p>
+
+  <pre><code>cd macos/dnsforce
+sudo ./setup.sh</code></pre>
+
+  <p>Inside, that runs <code>install.sh</code> (deploy main daemon), <code>install-keeper.sh</code> (deploy watchdog), and <code>lock.sh</code> (apply immutable flags). Total time: under a minute. Nothing in <code>/etc/</code> is touched; everything lives under <code>/usr/local/etc/dnsforce/</code> and <code>/Library/LaunchDaemons/</code>.</p>
+
+  <p>If you prefer to run the steps separately for inspection, you can. The full README for the dnsforce module is in <code>macos/dnsforce/README.md</code>.</p>
+
+  <h3>Verify</h3>
+
+  <pre><code># Plain DNS to a non-system resolver — should TIMEOUT after ~3 seconds
+dig @8.8.8.8 example.com +time=3 +tries=1
+
+# DoH to Cloudflare — should FAIL with connection refused or timeout
+curl -m 5 'https://1.1.1.1/dns-query?name=example.com' \
+     -H 'accept: application/dns-json'
+
+# Live sync log — you should see entries when you switch networks
+tail -f /var/log/dnsforce.log</code></pre>
+
+  <h3>About captive portals (airports, hotels, airplanes)</h3>
+
+  <p>Public Wi-Fi networks with captive portals work fine with <code>dnsforce</code> in nearly every case, because the captive portal's own DNS server is advertised via DHCP and gets added to your system resolvers automatically. The sync daemon then includes it in the allowlist, and the portal page loads normally.</p>
+
+  <p>The one case where it goes wrong: if you'd previously hard-coded <code>1.1.1.1</code> as a manual DNS server on a specific Wi-Fi network (System Settings → Network → Wi-Fi → Details → DNS), the captive portal's DNS won't get picked up automatically and the portal won't load. <strong>If that happens, remove <code>1.1.1.1</code> from the manual DNS list on that network</strong> — macOS will then use the network's pushed DNS, which the captive portal expects. After you've authenticated, the system goes back to using WARP and Cloudflare Gateway normally.</p>
+
+  <p>This is the one place in the setup where the magic number <code>1.1.1.1</code> can cause friction. Worth mentioning that in normal use — home network, normal Wi-Fi, cellular, airplane Wi-Fi without aggressive captive portals — none of this comes up at all.</p>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     09 · BROWSER DOH LOCK PROFILE
+═══════════════════════════════════════════════════════════════════ -->
+<section id="browsers">
+  <span class="section-num">§ 09</span>
+  <h2>Browser DoH lock profile</h2>
+
+  <p><code>dnsforce</code> blocks DoH at the network layer, which is what we want. But you can also block it one layer higher — inside each browser, using a macOS configuration profile that tells the browser "DoH is disabled, and the user isn't allowed to re-enable it from preferences."</p>
+
+  <p>Belt and braces. <code>dnsforce</code> is the brace; the profile is the belt.</p>
+
+  <p>The bundled <code>macos/disable-doh-and-proxy.mobileconfig</code> is a single configuration profile that, when installed:</p>
+
+  <ul>
+    <li>Disables DoH and locks proxy settings to <code>direct</code> in <strong>33 browser variants</strong>: Chrome, Chrome Beta/Dev/Canary, Chromium, Brave (4 channels), Edge (4 channels), Opera (4 variants including GX), Vivaldi (2), Yandex, Arc, Dia, Comet, Whale, SRWare Iron, Thorium, ungoogled-chromium, Firefox (4 channels), LibreWolf, Waterfox, Mullvad Browser.</li>
+    <li>Sets <code>PayloadRemovalDisallowed=true</code> and includes a <code>com.apple.profileRemovalPassword</code> payload — meaning removing the profile from System Settings requires a password you'll set, and discard.</li>
+  </ul>
+
+  <p>The profile is shipped <strong>unsigned</strong>, with the removal-password field deliberately empty. You need to fill it in before installing.</p>
+
+  <h3>Set the removal password</h3>
+
+  <p>Two ways to do this. Pick whichever you're more comfortable with.</p>
+
+  <h4>Option A — Apple Configurator 2 (GUI)</h4>
+
+  <ol class="steps">
+    <li>Install <a href="https://apps.apple.com/us/app/apple-configurator-2/id1037126344">Apple Configurator 2</a> from the Mac App Store. Free.</li>
+    <li>Open it. Drag <code>macos/disable-doh-and-proxy.mobileconfig</code> onto the Configurator window. It opens the profile in the editor.</li>
+    <li>In the left sidebar, scroll down to the <em>Removal Password</em> payload (the last one in the list).</li>
+    <li>Generate a long random password — <strong>at least 20 characters, mixed case and symbols.</strong> Use 1Password, Bitwarden, or just bash: <code>openssl rand -base64 24</code>.</li>
+    <li>Paste it into the <em>Removal Password</em> field. <strong>Do not save it anywhere.</strong> The whole point is to forget it.</li>
+    <li>File → Save. Configurator will write the password into the profile.</li>
+  </ol>
+
+  <h4>Option B — edit the XML directly</h4>
+
+  <p>The profile is plain XML. Open it in any text editor and find the empty <code>&lt;string&gt;&lt;/string&gt;</code> immediately after <code>&lt;key&gt;RemovalPassword&lt;/key&gt;</code>. Put your generated random string between those tags. Save the file.</p>
+
+  <h3>Install it</h3>
+
+  <ol class="steps">
+    <li>Double-click the (now password-protected) <code>.mobileconfig</code> file. macOS will warn that the profile is unsigned. Accept.</li>
+    <li>Open <em>System Settings → Privacy &amp; Security → Profiles</em> (in macOS 15, this is under the <em>General</em> sidebar item). The profile shows up as pending.</li>
+    <li>Double-click it. Confirm install. Enter your Mac admin password.</li>
+    <li>The profile is now active. Try opening Chrome → Settings → Privacy and Security → Use secure DNS. The option is greyed out, with a small "managed by your organization" indicator.</li>
+  </ol>
+
+  <div class="aside warn">
+    <span class="label">A note about macOS 13 and later</span>
+    <p>On recent macOS versions, installing a configuration profile via double-click sometimes shows the profile as <em>pending</em> in System Settings and requires you to navigate to the Profiles pane and approve it within 8 minutes, otherwise it disappears. If your install seems not to take effect, check Profiles in System Settings and look for a pending one to approve.</p>
+  </div>
+
+  <h3>Throw the password away</h3>
+
+  <p>If you used <code>openssl rand</code> in a terminal, close the terminal and clear scrollback. If you used 1Password or Bitwarden, delete the entry. If you wrote it on paper, hand the paper to your accountability partner or burn it.</p>
+
+  <p>From this point on, removing this profile from System Settings requires that password. You don't have it. Future-you doesn't have it. That's the point.</p>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     10 · iOS CONFIGURATION
+═══════════════════════════════════════════════════════════════════ -->
+<section id="ios">
+  <span class="section-num">§ 10</span>
+  <h2>iOS configuration</h2>
+
+  <p>iOS is, paradoxically, the easiest device to lock down — because Apple gives you a single sealed mechanism (the configuration profile) that the user genuinely cannot remove if it's been provisioned correctly.</p>
+
+  <p>You don't install anything by hand here. Tech Lockdown's wizard generates a signed iOS configuration profile bound to your account; you install it once via Safari on the phone, and that's it. No app to keep open, no daemon, nothing visible. The phone just stops loading gambling sites and stops launching gambling apps.</p>
+
+  <h3>What goes into the profile</h3>
+
+  <p>When you walk through Tech Lockdown's iOS configuration tabs (covered in <a href="#cloudflare">Section 04</a>), the wizard builds a profile with these payloads:</p>
+
+  <ol>
+    <li><strong>DNS Settings (managed)</strong> — Routes all DNS lookups on the device to Cloudflare Gateway over DNS-over-TLS, including the unique gateway hostname for your account. Crucially, <code>ProhibitDisablement=true</code> means iOS itself refuses to let you turn this DNS profile off. There isn't even a toggle in Settings.</li>
+    <li><strong>Application Access</strong> — A list of <em>blocked app bundle IDs</em>. Apps in this list cannot launch while the profile is installed. The default list is in <code>reference/tld-ios-blocked-apps.txt</code>; the headline entries are <code>com.kick.mobile</code> and <code>com.kick.streaming</code> (the Kick livestreaming app, which hosts large amounts of slot-stream content).</li>
+    <li><strong>Web Content Filter (built-in)</strong> — A separate iOS-native URL deny list, enforced by Apple's content filter independently of DNS. This is the belt-and-braces for iOS: even if DNS is somehow circumvented, the URL filter still kicks in. The default list (in <code>reference/tld-ios-web-content-filter.txt</code>) is a top-priority subset of about a dozen high-traffic gambling sites.</li>
+    <li><strong>PayloadRemovalDisallowed</strong> set to <code>true</code> on the outer payload — meaning iOS will not present any UI for removing the profile. The "Remove Profile" button simply isn't there.</li>
+  </ol>
+
+  <h3>Why this layout is good</h3>
+
+  <p>Three properties make this the most robust part of the whole stack:</p>
+
+  <ul>
+    <li><strong>It doesn't interfere with anything else.</strong> No always-on VPN icon in the status bar, no battery drain, no app-switching weirdness. The DNS-over-TLS handoff happens at the iOS networking layer with no visible footprint.</li>
+    <li><strong>It cannot be removed.</strong> Because <code>PayloadRemovalDisallowed=true</code>, iOS won't even <em>show</em> a remove button. The only way to undo it is to perform a full factory reset of the phone — which erases all your data, your photos, your iMessages, your apps. That's a high enough cost that you wouldn't do it on impulse.</li>
+    <li><strong>DNS is pinned at the OS layer, not the app layer.</strong> Every app on the phone — Safari, Chrome, in-app browsers, third-party apps — uses the locked DNS. There's nothing to misconfigure per-app.</li>
+  </ul>
+
+  <h3>Install the profile</h3>
+
+  <ol class="steps">
+    <li>In Tech Lockdown's dashboard, complete the iOS configuration wizard (see <a href="#cloudflare">§ 04</a> for the specific tab settings).</li>
+    <li>At the end, the wizard generates a download link or QR code for the signed <code>.mobileconfig</code> file. Open it from <strong>Safari on the iPhone</strong> (not Chrome — Chrome won't hand the profile to iOS correctly).</li>
+    <li>Safari downloads it. iOS prompts you to review and install it. Go to <em>Settings → General → VPN &amp; Device Management → [downloaded profile]</em>.</li>
+    <li>Tap <em>Install</em>, enter your iPhone passcode, accept the warnings about managed DNS and content filtering.</li>
+    <li>The profile is now installed and locked. Try opening <code>stake.com</code> in Safari — it should fail to load.</li>
+  </ol>
+
+  <h3>About modifying or adding settings later</h3>
+
+  <p>The Tech Lockdown UI lets you edit the underlying configuration (add domains, change app blocks) and push an update to your device without re-installing. But the update path goes through your Tech Lockdown account — and after <a href="#lockout-tld">Section 11</a> you won't be able to log in to that account casually. Which is correct. The right time to fine-tune the iOS setup is <em>now</em>, while you're still able to.</p>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     11 · LOCK YOURSELF OUT OF TECH LOCKDOWN
+═══════════════════════════════════════════════════════════════════ -->
+<section id="lockout-tld">
+  <span class="section-num">§ 11</span>
+  <h2>Lock yourself out of Tech Lockdown</h2>
+
+  <p>You now have a working stack. Everything below the surface is hard to undo. But Tech Lockdown's web dashboard is still wide open — sign in with your email and password and you can edit blocklists, push new profiles, or undo the iOS DNS settings in two clicks.</p>
+
+  <p>So before you walk away, you lock the management surface. Tech Lockdown ships a feature specifically for this: <em>Profile Lock</em>. It's a per-account setting that requires extra steps before you can unlock the dashboard and make changes.</p>
+
+  <figure>
+    <img src="screenshots/tld-profile-lock.png" alt="Tech Lockdown profile lock settings — Random Text unlock step enabled with 888 characters, Passcode unlock step enabled, Email Pin disabled.">
+    <figcaption>Tech Lockdown → Account → Profile Lock. Random Text: ON (888 chars). Passcode: ON. Email Pin: OFF.</figcaption>
+  </figure>
+
+  <h3>The recommended configuration</h3>
+
+  <p>Two unlock steps, no third:</p>
+
+  <ul>
+    <li><strong>Random Text — ON, count 888.</strong> Tech Lockdown generates an 888-character random string. To unlock your account, you have to <em>retype it correctly</em>. Case-sensitive. No copy-paste. 888 characters takes about 10 minutes of focused typing if you're fast, longer if you make mistakes and have to restart. That's the point. It's a tax on impulsivity, paid in time and attention.</li>
+    <li><strong>Passcode — ON.</strong> A second, additional unlock step. You set a passcode of any length. Importantly: you'll then write this passcode on a piece of paper and either give it to your accountability partner or shred it. Without the passcode, even completing the 888-char random text doesn't unlock the account.</li>
+    <li><strong>Email Pin — OFF.</strong> Tech Lockdown offers an unlock option that emails a PIN to an "accountability partner's email." Don't use this. It creates a bypass: a one-time PIN that arrives in an inbox you can read. Better to write the passcode on paper and physically give it to a person.</li>
+  </ul>
+
+  <h3>Set it up</h3>
+
+  <ol class="steps">
+    <li>In Tech Lockdown's dashboard, go to <em>Account → Profile Lock</em>.</li>
+    <li>Toggle <em>Random Text</em> ON. Click <em>Edit Random Text Count</em> and set it to <code>888</code>.</li>
+    <li>Toggle <em>Passcode</em> ON. Click <em>Edit Passcode</em> and set it to a passcode of your choice — a few words, a phrase, doesn't have to be cryptographically strong.</li>
+    <li>Leave <em>Email Pin</em> OFF.</li>
+    <li>Write the passcode on a piece of paper. <strong>Do not save it digitally.</strong></li>
+    <li>Hand the paper to your accountability partner, or burn it in front of them.</li>
+    <li>Click the <em>Lock</em> button (top right of the Tech Lockdown UI, or in the mobile header). Your account is now locked.</li>
+  </ol>
+
+  <p>From this point forward, every time you'd want to log in to change anything, you have two choices: retype the 888 characters of random text <em>and</em> obtain the passcode from your partner; or give up and walk away. Both are good outcomes. The first one takes 15 minutes of focused effort and a phone call to a human, which is more than enough time for an urge to pass.</p>
+
+  <h3>Two extra settings to consider</h3>
+
+  <p>While you're in the Profile Lock screen, Tech Lockdown exposes two further levers that strengthen the setup if you want them:</p>
+
+  <ul>
+    <li><strong>Unlock Delay</strong> — instead of (or in addition to) the unlock steps, you can configure a fixed cool-off period that must elapse <em>before</em> the unlock completes. Setting this to several hours (or a full day) means even if you successfully retype the random text, the changes don't apply until tomorrow morning. This is the closest software equivalent to "sleep on it." Recommended.</li>
+    <li><strong>Re-lock Automatically</strong> — after you finish making changes, the profile re-locks itself within a short window. Saves you from forgetting to re-lock and leaving the door open. Recommended.</li>
+  </ul>
+
+  <p>One worth knowing about but <strong>not</strong> recommended: <em>Email Pin</em>. Tech Lockdown will send a one-time PIN to a designated email address. If that address is your own inbox, you've created a bypass — you'd just read the email. If it's your partner's, you've replicated what the Passcode step does, with more moving parts. Stick to Random Text + Passcode.</p>
+
+  <p>The Random Text count maxes out at 1000 characters at the time of writing. 888 takes about 10–15 minutes of careful typing; 1000 takes a few minutes longer. The difference doesn't really matter — both are far longer than any urge will sustain.</p>
+
+  <div class="aside">
+    <span class="label">Don't block techlockdown.com itself</span>
+    <p>It would feel symmetrical to add <code>techlockdown.com</code> to the blocklist and slam the last door. Don't. Tech Lockdown's own documentation calls this out: you may legitimately need to log back in to <em>add</em> a new site you've discovered, view DNS logs to debug a problem, or coordinate with an accountability partner. Profile Lock already prevents you from making the policy less restrictive — that's what's enforcing the discipline, not the inability to reach the URL.</p>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     12 · LOCK YOURSELF OUT OF CLOUDFLARE
+═══════════════════════════════════════════════════════════════════ -->
+<section id="lockout-cf">
+  <span class="section-num">§ 12</span>
+  <h2>Lock yourself out of Cloudflare</h2>
+
+  <p>Same logic, applied to Cloudflare. Anyone with your Cloudflare credentials can log in to the Zero Trust dashboard and delete the DNS Block rule — instantly nullifying the whole stack. So we make that path expensive too.</p>
+
+  <ol class="steps">
+    <li>In Cloudflare → My Profile → Authentication, enable <em>Two-Factor Authentication</em>. Choose <em>Security Key (WebAuthn)</em> if you have a hardware token like a YubiKey, otherwise TOTP via Google Authenticator / 1Password / Bitwarden.</li>
+    <li>Cloudflare will give you a set of <strong>recovery codes</strong>. Write them down on a single piece of paper. <em>Do not save them digitally.</em></li>
+    <li>If you used TOTP: also write down a one-time copy of the TOTP seed (the QR code data). Stash it with the recovery codes.</li>
+    <li>Hand the paper to your accountability partner, or shred it.</li>
+    <li>Log out of Cloudflare on every device.</li>
+  </ol>
+
+  <p>Optional but recommended: change your Cloudflare account email to something you don't otherwise use (a forwarding alias), and change the password to a random 32-character string that you do not save. Without 2FA <em>and</em> the recovery codes <em>and</em> the password, future-you cannot log back in.</p>
+
+  <h3>One extra layer: API/Terraform read-only mode</h3>
+
+  <p>Cloudflare exposes an account-level toggle called <em>API/Terraform read-only mode</em>. When on, the entire account becomes read-only via API and Terraform — you can still browse the dashboard, but no programmatic call can modify rules, lists, or policies. For our purposes, this means even if future-you somehow recovers the API token from a backup or a screenshot, you cannot use it to delete the blocklist. The toggle lives in <em>My Profile → Preferences → Editing Permissions</em>, or under the account-level <em>Configurations</em> page. Once enabled, you'll see "API/Terraform read-only mode enabled" in the bottom of the Zero Trust sidebar. Turning it off requires logging into the dashboard (which is already protected by your 2FA and partner-held recovery codes). Recommended belt-and-braces.</p>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     13 · OPTIONAL — APPLIVERY MDM
+═══════════════════════════════════════════════════════════════════ -->
+<section id="applivery">
+  <span class="section-num">§ 13</span>
+  <h2>Optional — Applivery MDM (for the engineer-proof setup)</h2>
+
+  <p>This section is for people who already know how to use Terminal, who know about Recovery Mode, and who know — uncomfortably well — <em>a bypass</em>. You would say: there has to be <em>some</em> way to undo it. But "some way" needs to be so inconvenient enough that you can't slip through it during an urge.</p>
+
+  <p>This section closes that path. It uses an MDM (Mobile Device Management) service called <a href="https://dashboard.applivery.io/">Applivery</a> to push two additional protections onto your Mac:</p>
+
+  <ol>
+    <li>An MDM-enforced <em>profile removal password</em> — separately from the password you set in <a href="#browsers">§ 09</a>. The DoH-disable profile becomes removable only with a password Applivery holds, that you'll set and discard.</li>
+    <li>An MDM-pushed <strong>Recovery Lock</strong> — a firmware-level password that's prompted before Recovery Mode itself will boot. Without the Recovery Lock password, you can't even <em>reach</em> the Terminal in Recovery Mode.</li>
+  </ol>
+
+  <p>Together, those two close the Recovery Mode bypass entirely. The stack becomes genuinely irreversible without going through Applivery's password reset flow — which itself requires logging into Applivery, which itself can be 2FA'd and locked away.</p>
+
+  <h3>What this costs</h3>
+
+  <p>Applivery charges from <strong>€3 per device per month</strong> on the <em>Advanced</em> plan (billed annually), which is the tier that supports macOS devices and the <strong>profile removal password</strong> + <strong>Recovery Lock</strong> features. Monthly billing costs slightly more. They offer a <strong>14-day free trial</strong> on every plan, and 14 days is more than enough to set everything up, push the policies, verify, and then cancel. Cancellation does not remove the policies — those are written to firmware and to macOS — so you only pay if you want ongoing manageability after the initial setup.</p>
+
+  <p>The author of this guide isn't affiliated with Applivery; they were chosen after testing several MDM platforms because they have a clean UI, a small-business-friendly pricing model, and support for the specific Apple commands we need.</p>
+
+  <h3>Step 1: Sign up and enroll your Mac</h3>
+
+  <ol class="steps">
+    <li>Sign up at <a href="https://dashboard.applivery.io/">dashboard.applivery.io</a> and start the 14-day trial of the <em>Advanced</em> plan. Pick a workspace name when prompted — anything you'd be comfortable seeing in your own dashboard later. Applivery's top navigation is consistent across the product: <em>Overview · Devices · Policies · Resources · Automation</em>, with workspace picker and your trial countdown in the top-right.</li>
+    <li>Inside Applivery, go to <em>Devices</em> in the top nav, then click <em>Enroll device</em>. Choose <em>macOS</em>. Applivery generates an enrollment URL and shows a QR code.</li>
+    <li>Open the enrollment URL on the Mac you're locking down. Safari downloads a small <code>.mobileconfig</code> profile and prompts you to install it from <em>System Settings → General → Device Management</em>.</li>
+    <li>Approve it. macOS asks for your admin password, then enrolls. You'll see "Enrolled in MDM by Applivery" in System Settings. No factory reset is needed — UAMDM enrollment is the modern path. Back in Applivery's <em>Devices</em> page, your Mac now appears in the list with its hostname, OS version, current battery, and applied policies (initially empty).</li>
+  </ol>
+
+  <figure>
+    <img src="screenshots/applivery-devices.png" alt="Applivery Devices page showing one enrolled MacBookPro 16-inch with macOS 15.6, 91% battery, Global segment, and a 'Remove Protect' policy applied.">
+    <figcaption>Applivery → Devices, after enrollment and the removal-protection policy has been applied. The <em>POLICIES</em> column ("Remove Protect" here) is the audit trail confirming the policy is bound to the device.</figcaption>
+  </figure>
+
+  <h3>Step 2: Create a profile-removal-password policy</h3>
+
+  <ol class="steps">
+    <li>In Applivery, go to <em>Policies</em> in the top nav, then <em>Create policy → Configuration → Custom</em>. (Some Applivery layouts also expose this as <em>Resources → Configurations → Custom configuration profile</em>.)</li>
+    <li>Paste the following XML, which contains a single <code>com.apple.profileRemovalPassword</code> payload. Replace <code>YOUR_STRONG_PASSWORD_HERE</code> with a long random string you generate and immediately discard.
+<pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"&gt;
+&lt;plist version="1.0"&gt;
+&lt;dict&gt;
+  &lt;key&gt;PayloadContent&lt;/key&gt;
+  &lt;array&gt;
+    &lt;dict&gt;
+      &lt;key&gt;PayloadType&lt;/key&gt;
+      &lt;string&gt;com.apple.profileRemovalPassword&lt;/string&gt;
+      &lt;key&gt;PayloadIdentifier&lt;/key&gt;
+      &lt;string&gt;com.selfexclusion.applivery.removalpassword&lt;/string&gt;
+      &lt;key&gt;PayloadUUID&lt;/key&gt;
+      &lt;string&gt;A1B2C3D4-E5F6-7890-ABCD-EF1234567890&lt;/string&gt;
+      &lt;key&gt;PayloadVersion&lt;/key&gt;
+      &lt;integer&gt;1&lt;/integer&gt;
+      &lt;key&gt;RemovalPassword&lt;/key&gt;
+      &lt;string&gt;YOUR_STRONG_PASSWORD_HERE&lt;/string&gt;
+    &lt;/dict&gt;
+  &lt;/array&gt;
+  &lt;key&gt;PayloadType&lt;/key&gt;
+  &lt;string&gt;Configuration&lt;/string&gt;
+  &lt;key&gt;PayloadIdentifier&lt;/key&gt;
+  &lt;string&gt;com.selfexclusion.applivery.removalpassword.container&lt;/string&gt;
+  &lt;key&gt;PayloadUUID&lt;/key&gt;
+  &lt;string&gt;B1C2D3E4-F5A6-7890-BCDE-F12345678901&lt;/string&gt;
+  &lt;key&gt;PayloadVersion&lt;/key&gt;
+  &lt;integer&gt;1&lt;/integer&gt;
+&lt;/dict&gt;
+&lt;/plist&gt;</code></pre>
+    </li>
+    <li>Save the policy. Applivery now lists it under <em>Policies</em>. To apply it to a device, open <em>Devices → [your Mac]</em>, scroll to the <em>Policies</em> tab, click <em>Apply policy</em>, and select the removal-password policy you just created. Push.</li>
+    <li>Wait ~30 seconds. Then verify on your Mac: <em>System Settings → Privacy &amp; Security → Profiles</em>. The DoH-disable profile from <a href="#browsers">§ 09</a> should now show as protected by an MDM-managed removal password. Trying to remove it will prompt for a password you don't have.</li>
+    <li>Throw the password away. Same routine: paper to partner, or burn.</li>
+  </ol>
+
+  <p>In the Applivery <em>Devices</em> list, the policy you just applied will show in the "POLICIES" column for your Mac — for example, "Remove Protect". That's the audit trail; it's how you confirm the policy is bound to the device.</p>
+
+  <h3>Step 3: Set Recovery Lock</h3>
+
+  <p>Recovery Lock is a firmware-level password that Apple Silicon Macs prompt for <em>before</em> Recovery Mode will boot. It's the highest-level lockdown Apple provides outside of corporate device-management mode, and it's the thing that closes a possible engineer-level bypass.</p>
+
+  <figure>
+    <img src="screenshots/applivery-recovery-lock.png" alt="Applivery Commands UI showing 'Set Recovery Lock' and 'Verify Recovery Lock' options for macOS devices.">
+    <figcaption>Applivery → Devices → [your Mac] → Commands → Set Recovery Lock.</figcaption>
+  </figure>
+
+  <ol class="steps">
+    <li>In Applivery, go to your Mac's device page → <em>Commands</em>.</li>
+    <li>Find <em>Set Recovery Lock</em>. Click it. Enter a new long random password — <strong>different from the profile removal password above</strong>. Generate it the same way (<code>openssl rand -base64 24</code>) and immediately discard.</li>
+    <li>Applivery sends the command to your Mac. Wait 30 seconds.</li>
+    <li>Use <em>Verify Recovery Lock</em> (right below Set Recovery Lock) to confirm the lock is in place.</li>
+    <li>Discard the password. Same routine — paper, partner, burn.</li>
+  </ol>
+
+  <p>From this point: rebooting into Recovery Mode prompts for the Recovery Lock password. Without it, you will never reach a <code>bypass</code>.</p>
+
+  <h3>Step 4: Lock yourself out of Applivery</h3>
+
+  <p>Same idea as for Tech Lockdown and Cloudflare. Enable 2FA on the Applivery account, write recovery codes on paper, hand to your partner. Cancel the subscription if you want — the policies stay in effect even after the subscription lapses, until you actively unenroll the device.</p>
+
+  <div class="aside">
+    <span class="label">A note about Recovery Lock and Apple Support</span>
+    <p>If you somehow lose <em>both</em> the Recovery Lock password and access to your Applivery account, the Recovery Lock can be cleared by Apple Support with proof of device ownership (the original purchase receipt). This is a deliberate escape hatch for exactly the case where you've genuinely locked yourself out and need legitimate access. It's not a quick path — Apple's support process takes days to weeks — but it does exist. It's not a bypass; it's a safety net that requires a level of patience an urge wouldn't sustain.</p>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     14 · SANITY CHECKS
+═══════════════════════════════════════════════════════════════════ -->
+<section id="checks">
+  <span class="section-num">§ 14</span>
+  <h2>Sanity checks</h2>
+
+  <p>Before you walk away, run through this list. If any of them fails, fix that layer before you finalise. After you've thrown away passwords, fixing things gets meaningfully harder.</p>
+
+  <ol class="steps">
+    <li><strong>A blocked site doesn't load.</strong> Try Safari → <code>https://stake.com</code>. You should get a DNS error or a Cloudflare "blocked by your organization" page.</li>
+    <li><strong>Chrome with DoH on still doesn't load it.</strong> Open Chrome → Settings → Privacy and Security → Use secure DNS. Verify the toggle is greyed out (managed). Now visit a blocked site. Should fail.</li>
+    <li><strong>WARP can't be uninstalled.</strong> Try dragging the WARP app from /Applications to Trash. macOS prompts for admin password. After entering it, the uninstall is blocked or reverts within seconds (Enforcer Tool's job).</li>
+    <li><strong>/etc/hosts can't be edited.</strong> Try <code>sudo sh -c 'echo "1.2.3.4 test" &gt;&gt; /etc/hosts'</code>. Should fail with "Operation not permitted."</li>
+    <li><strong>The DoH-disable profile can't be removed.</strong> System Settings → Privacy &amp; Security → Profiles → click the DoH profile → click Remove. You should be prompted for a password. Cancel the prompt.</li>
+    <li><strong>dnsforce is running.</strong> <code>sudo launchctl print system/com.selfexclusion.dnsforce | grep state</code> should return <code>state = running</code>. Same for <code>...dnsforce-keeper</code>.</li>
+    <li><strong>iOS profile can't be removed.</strong> On the iPhone: Settings → General → VPN &amp; Device Management → [your profile]. The <em>Remove Profile</em> button shouldn't appear at all.</li>
+    <li><strong>Tech Lockdown account is locked.</strong> Sign out and try to sign back in. You should be prompted to retype 888 random characters and enter a passcode you've given away.</li>
+    <li><strong>Cloudflare requires 2FA.</strong> Sign out and try to sign back in. You should be prompted for your 2FA code.</li>
+    <li><strong>(Optional) Recovery Lock works.</strong> Restart the Mac, hold the power button on Apple Silicon to attempt to enter Recovery Mode. You should see a Recovery Lock password prompt. Press the power button to cancel and boot normally.</li>
+  </ol>
+
+  <p>If everything checks out, you're done. Throw away the rest of the passwords. Take a walk.</p>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     15 · WHEN THINGS GO WRONG
+═══════════════════════════════════════════════════════════════════ -->
+<section id="troubleshooting">
+  <span class="section-num">§ 15</span>
+  <h2>When things go wrong</h2>
+
+  <h3>"I can't access a captive portal (airport, hotel)"</h3>
+
+  <p>See the section on <a href="#dnsforce">dnsforce</a> for the long version. Short version: if a Wi-Fi network had <code>1.1.1.1</code> manually configured as DNS, remove it from <em>System Settings → Network → Wi-Fi → Details → DNS</em>. Reconnect to the network. The portal should now load. After authenticating, normal browsing resumes through WARP.</p>
+
+  <h3>"DNS broke after switching from WiFi to cellular"</h3>
+
+  <p><code>dnsforce</code> updates its allowlist on network changes within about 60 seconds. If it's been longer than that and DNS still isn't working, check the log:</p>
+  <pre><code>tail -50 /var/log/dnsforce.log</code></pre>
+  <p>If you see errors or no recent activity, manually trigger a sync:</p>
+  <pre><code>sudo /usr/local/sbin/dnsforce-sync.sh</code></pre>
+
+  <h3>"WARP shows IPC Error and won't connect"</h3>
+
+  <p>Restart the WARP daemon:</p>
+  <pre><code>sudo launchctl kickstart -k system/com.cloudflare.1dot1dot1dot1.macos.warp.daemon</code></pre>
+
+  <h3>"I want to add a new gambling site to the block"</h3>
+
+  <p>Virtually every gambling website as of May 2026, is on the list already, but you can edit the umbrella DNS rule's expression directly in Cloudflare Zero Trust without unlocking Tech Lockdown — go to <em>Zero Trust → Traffic policies → Firewall policies → DNS tab → [the umbrella rule]</em> and append <code>or any(dns.domains[*] == "newsite.com")</code> to the expression. You'll still need to be logged into Cloudflare (which requires 2FA, which requires recovery codes from your partner), and if you've enabled API/Terraform read-only mode (see <a href="#lockout-cf">§ 12</a>) you'll need to flip it off in your profile first.</p>
+
+  <p>Both paths are intentionally inconvenient. That's the design.</p>
+
+  <h3>"I can't reach Tech Lockdown or Cloudflare anymore"</h3>
+
+  <p>That's expected. Both domains are allowlisted in the URLAllowlist of the macOS Content Filter profile (so the management UIs themselves remain reachable), but if you set up the Tech Lockdown account lock, you can't actually sign in casually anymore — you'd have to retype 888 random characters and get the passcode from your partner. The dashboards being technically reachable is not the same as being usable, and the design is deliberate.</p>
+
+  <h3>"I'm getting a Cloudflare block page on a legitimate site"</h3>
+
+  <p>Sometimes a non-gambling domain shares infrastructure with a blocked one, or gets caught by the apex match. To allowlist a specific domain, edit the Cloudflare DNS rule expression to add an exception before the block:</p>
+  <pre><code># Zero Trust → Traffic policies → Firewall policies → DNS tab → your block rule.
+# Edit the expression and add a negation in front:
+not any(dns.domains[*] == "legitimate-site.com") and (the existing block expression)</code></pre>
+  <p>This too requires Cloudflare 2FA, which requires partner-held recovery codes. Plan for that inconvenience as part of the design.</p>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     16 · WHEN YOU HAVE AN URGE RIGHT NOW
+═══════════════════════════════════════════════════════════════════ -->
+<section id="urge">
+  <span class="section-num">§ 16</span>
+  <h2>When you have an urge right now</h2>
+
+  <p class="intro">If you've come back to this page because you're in the middle of a craving and you're trying to figure out how to undo the setup — please stop reading the instructions and read this paragraph instead.</p>
+
+  <p>The setup is doing its job. The friction you're hitting right now is the friction you asked for, on the day you set it up, when you were thinking clearly. The friction is not the problem. The urge is the problem.</p>
+
+  <p>The urge will pass. Most cravings, even very intense ones, peak within about 20 minutes and then start to fade. The whole stack is engineered around that fact. Every layer is designed to make undoing the block take longer than the urge would otherwise last — so that by the time you'd finished bypassing it, you'd no longer want to.</p>
+
+  <p>Things that help right now, more than fighting the setup:</p>
+
+  <ul>
+    <li><strong>Call the person who's holding your passcodes.</strong> Tell them you're having an urge. You don't have to ask for the passcode. Just talk to them for ten minutes.</li>
+    <li><strong>Call a helpline.</strong> They've talked to thousands of people in the exact moment you're in right now.
+      <ul>
+        <li><strong>US:</strong> National Problem Gambling Helpline — 1-800-GAMBLER (1-800-426-2537). 24/7. Free. Confidential.</li>
+        <li><strong>UK:</strong> National Gambling Helpline — 0808 8020 133 (run by GamCare). 24/7. Free.</li>
+        <li><strong>International:</strong> <a href="https://www.gamblersanonymous.org/">Gamblers Anonymous</a> directory by country.</li>
+      </ul>
+    </li>
+    <li><strong>Leave the room.</strong> Walk outside. The combination of physically being away from your computer and getting your heart rate up is unreasonably effective.</li>
+    <li><strong>Wait it out.</strong> Set a timer for 20 minutes. Do anything else for those 20 minutes. Re-evaluate after.</li>
+  </ul>
+
+  <p>You set this up because you wanted future-you to be safer than past-you was. Right now, you are future-you, and the setup is the present that past-you bought for you. Let it work.</p>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     17 · AFTER THE SETUP
+═══════════════════════════════════════════════════════════════════ -->
+<section id="aftercare">
+  <span class="section-num">§ 17</span>
+  <h2>After the setup</h2>
+
+  <p>The hardest thing about writing this section is resisting the urge to be preachy. So: briefly.</p>
+
+  <p>The setup is a wall around the problem, not a solution to it. It does what it does — it removes the easy path — and that's genuinely valuable. People who have done this report a substantial drop in losses, in time lost, in the background hum of compulsive checking. Removing access removes opportunity, and removing opportunity is the single most evidence-supported behavioural intervention for any compulsive behaviour. The Cochrane reviews back this up.</p>
+
+  <p>But removing access doesn't address why the compulsion is there in the first place. The block buys you time and headspace. What you do with the time and headspace is the actual work.</p>
+
+  <h3>What helps, beyond software</h3>
+
+  <ul>
+    <li><strong>Cognitive Behavioural Therapy (CBT)</strong> has the strongest evidence base for treating compulsive gambling, with meaningful improvements lasting beyond the treatment period. Most therapists who treat anxiety or substance-use disorders also work with behavioural addictions. Ask your GP for a referral, or look for a therapist who lists "behavioural addictions" or "process addictions" in their specialties.</li>
+    <li><strong>Peer support groups</strong> like Gamblers Anonymous, SMART Recovery, and online communities like r/problemgambling. Meeting other people who've been through the same thing matters more than most things.</li>
+    <li><strong>Financial steps:</strong> bank-level gambling transaction blocks (Monzo, Lloyds, Barclays, Revolut, Chase UK, and many others now offer these), self-exclusion via <a href="https://www.gamstop.co.uk/">GAMSTOP</a> (UK) or BetBlocker (worldwide), and credit freezes if you've been using credit to gamble.</li>
+    <li><strong>Talking to one trusted person</strong>, whether a partner, a sibling, a sponsor, or a therapist. Compulsive gambling is the most secret-keeping of the addictions, and secrecy is what it runs on. Saying it out loud to one person is often the moment the spell breaks.</li>
+  </ul>
+
+  <h3>Long-term: support resources</h3>
+
+  <table>
+    <thead>
+      <tr><th>Country</th><th>Resource</th><th>Contact</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>US</td><td>National Council on Problem Gambling</td><td>1-800-GAMBLER (1-800-426-2537) · <a href="https://www.ncpgambling.org/">ncpgambling.org</a></td></tr>
+      <tr><td>UK</td><td>GamCare / National Gambling Helpline</td><td>0808 8020 133 · <a href="https://www.gamcare.org.uk/">gamcare.org.uk</a></td></tr>
+      <tr><td>UK</td><td>NHS National Gambling Service</td><td>Self-referral via <a href="https://www.nhs.uk/service-search/other-services/gambling-addiction/locationsearch/1939">nhs.uk</a></td></tr>
+      <tr><td>UK</td><td>GAMSTOP self-exclusion</td><td><a href="https://www.gamstop.co.uk/">gamstop.co.uk</a> (free, blocks all UK-licensed sites for 6mo / 1y / 5y)</td></tr>
+      <tr><td>International</td><td>Gamblers Anonymous</td><td><a href="https://www.gamblersanonymous.org/">gamblersanonymous.org</a> (find local meetings)</td></tr>
+      <tr><td>Australia</td><td>Gambling Help Online</td><td>1800 858 858 · <a href="https://www.gamblinghelponline.org.au/">gamblinghelponline.org.au</a></td></tr>
+      <tr><td>Canada</td><td>ConnexOntario / provincial helplines</td><td>1-866-531-2600 (Ontario) · <a href="https://www.responsiblegambling.org/">responsiblegambling.org</a></td></tr>
+      <tr><td>EU (multiple)</td><td>EUROPE Federation of Help Lines</td><td><a href="https://www.gaminghelpline.eu/">gaminghelpline.eu</a> (directory by country)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     18 · CREDITS, LICENSE, DISCLAIMERS
+═══════════════════════════════════════════════════════════════════ -->
+<section id="credits" class="no-rule">
+  <span class="section-num">§ 18</span>
+  <h2>Credits, license, disclaimers</h2>
+
+  <p>This guide and the accompanying files are released <strong>anonymously</strong> by someone who built this stack for themselves and decided that other people in the same situation shouldn't have to figure it out alone.</p>
+
+  <p>No part of this guide is affiliated with, endorsed by, or sponsored by Cloudflare, Tech Lockdown, Applivery, Apple, or any other company named here. Their names appear because they are the tools that worked, after a long process of trying everything else.</p>
+
+  <h3>Maintenance &amp; contributions</h3>
+
+  <p>The author checks the GitHub repository <strong>every Sunday</strong> to merge pull requests, triage issues, and refresh anything that's gone stale (TLD UI changes, Cloudflare path renames, new gambling apex domains worth adding to <code>apex_only.txt</code>). If you submit something on a Tuesday, expect a response by the following Sunday at the latest. Outside of that weekly window, the author is deliberately disengaged — anonymity is part of the design.</p>
+
+  <p><strong>Top contribution priority right now is a Windows port.</strong> Every commercial tool this stack depends on already supports Windows out of the box:</p>
+
+  <ul>
+    <li><strong>Tech Lockdown</strong> has a Windows config generator and a <em>Cloudflare WARP Enforcer Tool for Windows</em> (see <a href="https://help.techlockdown.com/hc/en-us/categories/33568941298708-Getting-Started">help.techlockdown.com → Tools</a> for both). The 888-character Profile Lock works identically on the Windows dashboard.</li>
+    <li><strong>Cloudflare WARP</strong> ships a Windows client; the Cloudflare Gateway rules and Lists apply to it the same way they do on macOS — the migration script doesn't care which OS the device runs.</li>
+    <li><strong>Applivery</strong> supports Windows 10 and 11 on the Advanced plan, including custom configuration profiles and remote commands. Windows uses a different mechanism for the "Recovery Lock" equivalent (BitLocker recovery key + Secure Boot + Windows Hello PIN), and the profile-removal-password concept maps to Windows MDM's <code>RestrictionGroups</code> / Configuration Service Provider policies.</li>
+  </ul>
+
+  <p>What's <em>not</em> covered yet, and what a Windows port would need to invent equivalents for:</p>
+
+  <ul>
+    <li><strong>The <code>/etc/hosts</code> + <code>chflags schg</code> lock.</strong> Windows has a <code>hosts</code> file at <code>C:\Windows\System32\drivers\etc\hosts</code>. The closest equivalent to <code>chflags schg</code> is removing all write permissions for everyone (including Administrators) via <code>icacls</code> and locking via <em>Group Policy</em> or <em>AppLocker</em>. A clean replacement script would mirror what <code>lock_hosts.sh</code> does.</li>
+    <li><strong>The <code>dnsforce</code> PF firewall.</strong> Windows doesn't have PF, but it does have the <strong>Windows Filtering Platform</strong> (WFP) and <strong>Windows Defender Firewall with Advanced Security</strong>. WFP rules can block outbound packets to DoH provider IPs (port 443, IP-based) and to ports 853 / 8853 the same way PF does. A Windows port of dnsforce would be a small service that maintains those firewall rules across network switches.</li>
+    <li><strong>The DoH-disable configuration profile.</strong> Chrome, Edge, Firefox, Brave, etc. on Windows all read their managed-policy values from the Windows Registry under <code>HKLM\Software\Policies\&lt;Vendor&gt;\&lt;Browser&gt;</code>. The same <code>DnsOverHttpsMode = "off"</code> + <code>ProxySettings = direct</code> values from the macOS configuration profile translate one-for-one to registry entries. A <code>.reg</code> file or a Group Policy template would do it.</li>
+  </ul>
+
+  <p>If you'd like to take on the Windows port, fork the repository, build the parallel <code>windows/</code> directory next to the existing <code>macos/</code>, and open a pull request. The architecture chapter (§ 02) and the layer-by-layer breakdown that follows should give you everything you need to mirror the macOS layers cleanly. Other contributions welcome too — Linux equivalents, Android-via-Applivery extensions, additional blocklist sources, translations of this guide into other languages, accessibility improvements.</p>
+
+  <h3>License</h3>
+
+  <p>All of the code, configurations, and text in this bundle are released under a permissive MIT-style license. You can use it, modify it, fork it, redistribute it, fold it into your own guide. The only thing you can't do is sell it as a packaged product — partly because that would be ugly, partly because the underlying services it depends on (Cloudflare, Tech Lockdown, Applivery) aren't yours to redistribute.</p>
+
+  <h3>Reference docs</h3>
+
+  <ul>
+    <li><a href="https://help.techlockdown.com/hc/en-us/categories/33568941298708-Getting-Started">Tech Lockdown — Getting Started</a></li>
+    <li><a href="https://help.techlockdown.com/hc/en-us/categories/33623221661844-FAQs-and-Troubleshooting">Tech Lockdown — FAQs &amp; Troubleshooting</a></li>
+    <li><a href="https://developers.cloudflare.com/cloudflare-one/account-limits/">Cloudflare Zero Trust account limits</a></li>
+    <li><a href="https://developers.cloudflare.com/cloudflare-one/reusable-components/lists/">Cloudflare Gateway Lists docs</a></li>
+    <li><a href="https://support.apple.com/en-us/guide/deployment/dep5370d089/web">Apple — Configuration profile reference</a></li>
+    <li><a href="https://support.apple.com/guide/deployment/intro-to-configuration-profiles-dep5370d089/web">Apple — Profile removal password</a></li>
+  </ul>
+
+  <h3>Disclaimer</h3>
+
+  <p>This is provided as-is, without warranty of any kind. Modifying system files, locking devices, and pushing MDM profiles can in rare cases cause unexpected behaviour. If you follow this guide and end up with a Mac that won't boot, an iPhone that won't update, or a Cloudflare account you can't access, the answer is the same as it would be for any other significant Apple/Cloudflare issue: contact the respective support teams with proof of ownership. They have unlock processes for exactly these scenarios.</p>
+
+  <p>And finally: if this saves one person from one bad night, it was worth writing.</p>
+
+  <footer>
+    <p>Released 2026 · No author, no donations, no contact address.</p>
+    <p>A.R.C.05.</p>
+  </footer>
+</section>
+
+</main>
+</div>
+
+<script>
+// Highlight the current section in the TOC as you scroll.
+(function() {
+  const links = document.querySelectorAll('.toc a[href^="#"]');
+  const sections = Array.from(links).map(a => {
+    const id = a.getAttribute('href').slice(1);
+    return { link: a.parentElement, target: document.getElementById(id) };
+  }).filter(s => s.target);
+
+  function update() {
+    const scrollY = window.scrollY + 120;
+    let active = sections[0];
+    for (const s of sections) {
+      if (s.target.offsetTop <= scrollY) active = s;
+    }
+    sections.forEach(s => s.link.classList.toggle('active', s === active));
+  }
+
+  window.addEventListener('scroll', update, { passive: true });
+  window.addEventListener('resize', update);
+  update();
+})();
+</script>
+
+</body>
+</html>

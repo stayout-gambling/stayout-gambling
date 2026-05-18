@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.selfexclusion.dnsforce</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/sbin/dnsforce-sync.sh</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!--
+        Reactive trigger on DNS state change (network switch, VPN, etc.)
+    -->
+    <key>WatchPaths</key>
+    <array>
+        <string>/etc/resolv.conf</string>
+        <string>/var/run/resolv.conf</string>
+        <string>/private/var/run/resolv.conf</string>
+    </array>
+
+    <!--
+        Watchdog: re-sync every 60s. Also: sync.sh exits cleanly, but
+        StartInterval keeps invoking it. Combined with KeepAlive below,
+        this means the moment anything kills sync.sh it's relaunched.
+    -->
+    <key>StartInterval</key>
+    <integer>60</integer>
+
+    <!--
+        KeepAlive=true means launchd ALWAYS wants sync.sh running. If
+        anyone runs `launchctl bootout system/com.selfexclusion.dnsforce`
+        or `launchctl kill`, launchd will relaunch it immediately
+        (subject to ThrottleInterval below).
+
+        Note: sync.sh is short-lived (exits after one pass). With
+        KeepAlive=true, launchd will relaunch it constantly. We want
+        that — but we throttle to once every 30s to avoid CPU churn.
+        The reactive WatchPaths trigger still fires instantly on
+        network change regardless of throttle.
+    -->
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+
+    <!--
+        ProcessType Background tells launchd this is a low-priority
+        long-running service, which makes it harder to accidentally
+        kill via Activity Monitor.
+    -->
+    <key>ProcessType</key>
+    <string>Background</string>
+
+    <key>StandardErrorPath</key>
+    <string>/var/log/dnsforce.log</string>
+    <key>StandardOutPath</key>
+    <string>/var/log/dnsforce.log</string>
+</dict>
+</plist>

@@ -1,0 +1,40 @@
+# /usr/local/etc/dnsforce/com.selfexclusion.dnsforce
+#
+# Forces every application on this Mac to resolve names via the system
+# resolver (getaddrinfo()), which means /etc/hosts is always consulted.
+#
+# Blocks every alternative DNS path at the packet layer:
+#   - Plain DNS  (53)   -> allowed only to <allowed_dns>
+#   - DoT        (853)  -> dropped
+#   - DoQ        (8853) -> dropped
+#   - DoH        (443)  -> dropped to known public DoH IPs (v4 + v6)
+#
+# <allowed_dns> is populated at runtime by dnsforce-sync.sh.
+# <doh_endpoints> is loaded from an external file so macOS PF doesn't
+# have to parse a mixed v4/v6/comment block inline (its parser is old
+# and chokes on that combination).
+
+# Dynamic — populated by dnsforce-sync.sh.
+table <allowed_dns> persist
+
+# Static — loaded from disk.
+table <doh_endpoints> persist file "/usr/local/etc/dnsforce/doh-endpoints.list"
+
+# Loopback passes
+pass quick on lo0 all
+
+# Plain DNS (53): allow only to current system resolvers
+pass  out quick proto { tcp udp } from any to <allowed_dns> port 53
+block drop out quick proto { tcp udp } from any to any        port 53
+
+# DoT (853), DoQ (8853): drop unconditionally
+block drop out quick proto { tcp udp } from any to any port 853
+block drop out quick proto udp         from any to any port 8853
+
+# DoH (443) to known public providers
+block drop out quick proto tcp from any to <doh_endpoints> port 443
+block drop out quick proto udp from any to <doh_endpoints> port 443
+
+# OPTIONAL hard mode — uncomment to kill ALL HTTP/3 globally
+# (prevents unknown private DoH3 endpoints; HTTP/3 falls back to HTTP/2)
+# block drop out quick proto udp from any to any port 443

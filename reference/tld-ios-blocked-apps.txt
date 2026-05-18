@@ -1,0 +1,21 @@
+# Tech Lockdown — iOS Application Access — blocked app bundle IDs
+#
+# These app bundle IDs are blocked outright on iOS. They cannot be
+# launched while the TLD profile is installed. They are not on the
+# Cloudflare DNS layer because they are app-level controls.
+#
+# To use: when configuring the iOS profile in Tech Lockdown's wizard,
+# add these to "Blocked Apps" (by bundle ID).
+#
+# Note about what's here:
+#   - com.kick.mobile, com.kick.streaming -- Kick app; the platform
+#     hosts large amounts of livestreamed slot/casino content and
+#     openly courts gambling sponsorships. Blocking the app stops
+#     accidental exposure even if the website is missed elsewhere.
+#   - ae.aletihadpayments.aani -- the Aani instant-payment app
+#     (UAE), often a funding channel for offshore casinos.
+#     Remove this line if it doesn't apply to your region.
+#
+com.kick.mobile
+com.kick.streaming
+ae.aletihadpayments.aani

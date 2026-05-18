@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.selfexclusion.dnsforce-keeper</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/sbin/dnsforce-keeper.sh</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- Check every 30 seconds. -->
+    <key>StartInterval</key>
+    <integer>30</integer>
+
+    <!--
+        KeepAlive=true + ThrottleInterval=30: same trick as the main
+        daemon. The keeper itself can't be killed-and-stay-dead by
+        anything short of `launchctl bootout system/com.selfexclusion.dnsforce-keeper`.
+        And bootout on this daemon doesn't get you anything unless you
+        ALSO bootout the main one within the same 30-second window —
+        otherwise the keeper resurrects the main one before you finish
+        the second command.
+    -->
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+
+    <key>ProcessType</key>
+    <string>Background</string>
+
+    <key>StandardErrorPath</key>
+    <string>/var/log/dnsforce.log</string>
+    <key>StandardOutPath</key>
+    <string>/var/log/dnsforce.log</string>
+</dict>
+</plist>
