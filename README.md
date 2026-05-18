@@ -46,7 +46,7 @@ A defense-in-depth setup for blocking gambling sites and apps on your own device
 ## What this is not
 
 - Not a single-product solution. It's seven layered mechanisms.
-- Not free. Tech Lockdown is $9.99/month billed annually and effectively required. Applivery is optional but useful if you're a software engineer (€3/device/month on the Advanced plan, annual billing; the 14-day free trial is enough to set up and cancel).
+- Not free. Tech Lockdown is $9.99/month billed annually (7-day free trial) and effectively required. Applivery is optional but useful if you're a software engineer — €3/device/month on the Advanced plan, billed annually; the 14-day free trial is enough to set everything up and cancel.
 - Not a substitute for therapy or peer support. See the last section of `guide.html`.
 - Not affiliated with Cloudflare, Tech Lockdown, Applivery, or Apple.
 
