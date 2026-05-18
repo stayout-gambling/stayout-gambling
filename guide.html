@@ -1524,7 +1524,7 @@ not any(dns.domains[*] == "legitimate-site.com") and (the existing block express
 
   <h3>Maintenance &amp; contributions</h3>
 
-  <p>The author checks the GitHub repository <strong>every Sunday</strong> to merge pull requests, triage issues, and refresh anything that's gone stale (TLD UI changes, Cloudflare path renames, new gambling apex domains worth adding to <code>apex_only.txt</code>). If you submit something on a Tuesday, expect a response by the following Sunday at the latest. Outside of that weekly window, the author is deliberately disengaged — anonymity is part of the design.</p>
+  <p>The author checks the <a href="https://github.com/stayout-gambling/stayout-gambling">GitHub repository</a> <strong>every Sunday</strong> to merge pull requests, triage issues, and refresh anything that's gone stale (TLD UI changes, Cloudflare path renames, new gambling apex domains worth adding to <code>apex_only.txt</code>). If you submit something on a Tuesday, expect a response by the following Sunday at the latest. Outside of that weekly window, the author is deliberately disengaged — anonymity is part of the design.</p>
 
   <p><strong>Top contribution priority right now is a Windows port.</strong> Every commercial tool this stack depends on already supports Windows out of the box:</p>
 
@@ -1542,11 +1542,11 @@ not any(dns.domains[*] == "legitimate-site.com") and (the existing block express
     <li><strong>The DoH-disable configuration profile.</strong> Chrome, Edge, Firefox, Brave, etc. on Windows all read their managed-policy values from the Windows Registry under <code>HKLM\Software\Policies\&lt;Vendor&gt;\&lt;Browser&gt;</code>. The same <code>DnsOverHttpsMode = "off"</code> + <code>ProxySettings = direct</code> values from the macOS configuration profile translate one-for-one to registry entries. A <code>.reg</code> file or a Group Policy template would do it.</li>
   </ul>
 
-  <p>If you'd like to take on the Windows port, fork the repository, build the parallel <code>windows/</code> directory next to the existing <code>macos/</code>, and open a pull request. The architecture chapter (§ 02) and the layer-by-layer breakdown that follows should give you everything you need to mirror the macOS layers cleanly. Other contributions welcome too — Linux equivalents, Android-via-Applivery extensions, additional blocklist sources, translations of this guide into other languages, accessibility improvements.</p>
+  <p>If you'd like to take on the Windows port, <a href="https://github.com/stayout-gambling/stayout-gambling/fork">fork the repository</a>, build the parallel <code>windows/</code> directory next to the existing <code>macos/</code>, and open a pull request. The architecture chapter (§ 02) and the layer-by-layer breakdown that follows should give you everything you need to mirror the macOS layers cleanly. Other contributions welcome too — Linux equivalents, Android-via-Applivery extensions, additional blocklist sources, translations of this guide into other languages, accessibility improvements. Open an issue at <a href="https://github.com/stayout-gambling/stayout-gambling/issues">github.com/stayout-gambling/stayout-gambling/issues</a> if you want to flag something before sending a PR.</p>
 
   <h3>License</h3>
 
-  <p>All of the code, configurations, and text in this bundle are released under a permissive MIT-style license. You can use it, modify it, fork it, redistribute it, fold it into your own guide. The only thing you can't do is sell it as a packaged product — partly because that would be ugly, partly because the underlying services it depends on (Cloudflare, Tech Lockdown, Applivery) aren't yours to redistribute.</p>
+  <p>All of the code, configurations, and text in this bundle are released under a permissive <a href="https://github.com/stayout-gambling/stayout-gambling/blob/main/LICENSE">MIT license</a> (full text in the <code>LICENSE</code> file at the root of the bundle). You can use it, modify it, fork it, redistribute it, fold it into your own guide. The only thing you can't do is sell it as a packaged product — partly because that would be ugly, partly because the underlying services it depends on (Cloudflare, Tech Lockdown, Applivery) aren't yours to redistribute.</p>
 
   <h3>Reference docs</h3>
 
