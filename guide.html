@@ -639,9 +639,30 @@ hr.divider {
     <p>Left sidebar: <em>Dashboard</em> (overview), <em>Content Policy</em> (block/allow rules), <em>Device Setup</em>, <em>Activity</em> (DNS query log), <em>Tools</em> (the page where you download WARP and the Enforcer), <em>Config Generator</em> (the wizard that produces the signed iOS profile), <em>Settings</em>, <em>Guides</em>. Top right is the <em>Locked / Unlocked</em> indicator — once you've set up Profile Lock, click that pill to unlock. <em>Settings</em> has nine subsections worth knowing about: Profile, Locking Preferences, Users (use this to add an accountability partner as a co-admin if you want them to be able to make policy changes themselves), Subscription &amp; Billing, Cloudflare Connection, Routers, Traffic Logging, App Preferences, Certificates.</p>
   </div>
 
+  <h3>iOS Device Setup wizard (do this before the Config Generator)</h3>
+
+  <p>Before you produce the signed configuration profile in <em>Config Generator</em>, Tech Lockdown wants your iPhone to be in two specific states: <strong>supervised</strong>, and <strong>connected to your Content Policy</strong> via the Cloudflare One / WARP app. The dashboard's <em>Device Setup</em> page (left sidebar) walks through both checks as a five-step wizard. Run it before the Config Generator — if you skip it, the profile you generate later won't have anywhere to attach itself.</p>
+
+  <figure>
+    <img src="screenshots/tld-ios-setup-1-select-device.png" alt="Tech Lockdown Device Setup, Step 1: Select a Device. Tiles for Windows, Router, and iPhone (iPhone highlighted).">
+    <figcaption><strong>Step 1 — Select a Device.</strong> Click the <em>iPhone</em> tile. This branches the wizard onto the iOS-specific path. (The same page on macOS would walk you toward downloading WARP + the Enforcer Tool from <em>Tools → Mac</em>.)</figcaption>
+  </figure>
+
+  <figure>
+    <img src="screenshots/tld-ios-setup-2-supervision-check.png" alt="Tech Lockdown Device Setup, Step 2: Is your iPhone supervised? With a 'No, it is not supervised' option selected and a reference screenshot of a supervised iPhone Settings screen showing 'This iPhone is supervised and managed by Tech Lockdown'. Step 3 below: Enable Supervised Mode button.">
+    <figcaption><strong>Step 2 — Is your iPhone supervised?</strong> Click <em>No, it is not supervised</em> and the wizard exposes <strong>Step 3 — Enable Supervised Mode</strong>. <em>Supervised mode</em> is Apple's name for putting your iPhone into a state where it accepts a managed configuration profile that can't be removed from Settings — exactly what we need. Tech Lockdown's wizard does this without erasing the phone (it uses Apple's automated-device-enrollment via a temporary Mac-tethered step). It takes under 5 minutes and you do not lose any data, contacts, photos, messages, or apps. If asked, click <em>Enable Supervised Mode</em> and follow the linked tutorial — Tech Lockdown's help center page walks through every screen with photos.</figcaption>
+  </figure>
+
+  <figure>
+    <img src="screenshots/tld-ios-setup-3-connect-policy.png" alt="Tech Lockdown Device Setup, Step 4: Is your iPhone connected to your Content Policy? 'No' option selected. Step 5: Connect an iPhone to your Content Policy, with an 'Install VPN app' button.">
+    <figcaption><strong>Step 4 — Is your iPhone connected to your Content Policy?</strong> Once supervision is enabled the wizard scrolls down and asks the connection question. Pick <em>No</em>, then <strong>Step 5 — Install VPN app</strong> appears with an "Install VPN app" button. Tap it on the iPhone — it deep-links to the App Store page for Cloudflare's <em>1.1.1.1: Faster &amp; Safer Internet</em> app (which contains the WARP client). Install it, open it once, sign in to your Tech Lockdown team when prompted, and the wizard will tick green. From this point the iPhone is routing DNS through Cloudflare Gateway, with the umbrella block rule already applied.</figcaption>
+  </figure>
+
+  <p>With the iPhone supervised and the WARP/Cloudflare One app installed and signed in, you've completed the prerequisites. The phone is already being protected at the DNS layer — every gambling apex on the 62,636-domain list returns a Cloudflare block response. Now you move on to the Config Generator (next sub-section) to produce the signed iOS configuration profile that <em>locks down</em> the DNS settings, prevents new VPNs from being installed, blocks specific apps and URLs, and makes the whole arrangement removal-protected.</p>
+
   <h3>iOS configuration tabs</h3>
 
-  <p>Once connected, Tech Lockdown will walk you through configuring your iOS device. There are five tabs: <em>Apps</em>, <em>General</em>, <em>Network</em>, <em>Config Preferences</em>, and <em>Web</em>. The settings to flip away from default are below — adjust them as needed for your specific situation, but the screenshots show what worked.</p>
+  <p>Once the iPhone is supervised and the WARP app is installed (previous sub-section), Tech Lockdown's <em>Config Generator</em> page walks you through producing the signed iOS configuration profile. There are five tabs: <em>Apps</em>, <em>General</em>, <em>Network</em>, <em>Config Preferences</em>, and <em>Web</em>. The settings to flip away from default are below — adjust them as needed for your specific situation, but the screenshots show what worked.</p>
 
   <figure>
     <img src="screenshots/tld-ios-network.png" alt="Tech Lockdown iOS Config — Network tab, with Enforce DNS Settings toggled on and Modifying Personal Hotspot allowed.">
@@ -1235,9 +1256,21 @@ tail -f /var/log/dnsforce.log</code></pre>
 
   <h3>Step 2: Create a profile-removal-password policy</h3>
 
+  <p>This is the step that actually puts a password-prompt on top of the DoH-disable profile from <a href="#browsers">§ 09</a>. You'll do it inside Applivery as a click-through. The XML you'll need to paste is in step 3 below — but for now, just follow the screenshots in order.</p>
+
   <ol class="steps">
-    <li>In Applivery, go to <em>Policies</em> in the top nav, then <em>Create policy → Configuration → Custom</em>. (Some Applivery layouts also expose this as <em>Resources → Configurations → Custom configuration profile</em>.)</li>
-    <li>Paste the following XML, which contains a single <code>com.apple.profileRemovalPassword</code> payload. Replace <code>YOUR_STRONG_PASSWORD_HERE</code> with a long random string you generate and immediately discard.
+    <li>In Applivery, go to <em>Policies</em> in the top nav. Create one (the "New policy" button is on the Policies page). Then click the policy to open its detail view, and scroll the sidebar of payload categories to the bottom — you'll see a highlighted <strong>+ Add configuration</strong> button. Click it.
+    </li>
+
+    <li>Applivery now shows the configurations editor for this policy. Click the dark blue <strong>+ Import</strong> button next to the configuration search bar.
+
+  <figure>
+    <img src="screenshots/applivery-policies-import.png" alt="Applivery top tabs showing Devices on the left and Policies highlighted on the right, with a dark blue '+ Import' button and a 'Search configuration…' field below.">
+    <figcaption>The <em>+ Import</em> button is how you bring in an existing <code>.mobileconfig</code> XML — which is exactly what we have.</figcaption>
+  </figure>
+    </li>
+
+    <li>An <em>Import profile</em> modal opens with a large text area. First, open Terminal and run <code>openssl rand -base64 24</code> to generate a long random password — write the output on a piece of paper, do <strong>not</strong> save it anywhere digital. Then paste the XML below into the modal's text area, replacing <code>YOUR_STRONG_PASSWORD_HERE</code> with the password you just generated. The moment the paste parses correctly, Applivery shows a green "<strong>1 payload found</strong>" indicator in the bottom-left. Click <em>Preview</em>.
 <pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
 &lt;!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"&gt;
 &lt;plist version="1.0"&gt;
@@ -1267,10 +1300,40 @@ tail -f /var/log/dnsforce.log</code></pre>
   &lt;integer&gt;1&lt;/integer&gt;
 &lt;/dict&gt;
 &lt;/plist&gt;</code></pre>
+
+  <figure>
+    <img src="screenshots/applivery-import-paste-xml.png" alt="Applivery Import profile modal with the plist XML pasted into a large text area. Visible keys include PayloadContent, PayloadType com.apple.profileRemovalPassword, PayloadIdentifier com.selfexclusion.applivery.removalpassword, PayloadUUID, and RemovalPassword YOUR_STRONG_PASSWORD_HERE highlighted. Bottom-left shows '1 payload found' with a green check.">
+    <figcaption>Modal with the XML pasted. The "<strong>1 payload found</strong>" badge tells you Applivery parsed it correctly — if it doesn't appear, check that you pasted the entire block including the surrounding <code>&lt;?xml…&gt;</code> and <code>&lt;/plist&gt;</code> lines.</figcaption>
+  </figure>
     </li>
-    <li>Save the policy. Applivery now lists it under <em>Policies</em>. To apply it to a device, open <em>Devices → [your Mac]</em>, scroll to the <em>Policies</em> tab, click <em>Apply policy</em>, and select the removal-password policy you just created. Push.</li>
-    <li>Wait ~30 seconds. Then verify on your Mac: <em>System Settings → Privacy &amp; Security → Profiles</em>. The DoH-disable profile from <a href="#browsers">§ 09</a> should now show as protected by an MDM-managed removal password. Trying to remove it will prompt for a password you don't have.</li>
-    <li>Throw the password away. Same routine: paper to partner, or burn.</li>
+
+    <li>The <em>Preview</em> screen renders the payload as a clean key-value table — you should see <code>#1 com.apple.profileRemovalPassword</code> at the top, then your <em>PayloadUUID</em> and the <em>RemovalPassword</em> value (the actual password you just pasted; Applivery shows it in clear text here as a sanity check). Confirm everything looks right and click <strong>Import (1)</strong>.
+
+  <figure>
+    <img src="screenshots/applivery-import-preview.png" alt="Applivery Import profile preview screen with a Custom tab, showing payload #1 labeled com.apple.profileRemovalPassword. A key-value table shows PayloadUUID A1B2C3D4-E5F6-7890-ABCD-EF1234567890 and RemovalPassword LONG_PASSWORD_OF_YOUR_CHOICE. Bottom-right has a blue 'Import (1)' button.">
+    <figcaption>The Preview confirms the parsed payload. Click <strong>Import (1)</strong> to commit it to the policy.</figcaption>
+  </figure>
+    </li>
+
+    <li>You're back at the policy detail page. The payload is now part of the policy (Applivery will show it in the <em>Custom</em> section of the sidebar). Scroll down to the <em>Assigned devices</em> section and click <strong>+ Assign to device</strong>.
+
+  <figure>
+    <img src="screenshots/applivery-policy-detail.png" alt="Applivery 'Remove Protect' policy detail page in a wide view. Top shows Overview / Devices / Policies (selected) / Resources. Left: policy info card with 'Remove Protect v6 Updated 6 hours ago', segment Global, 'No changes' indicator, and the payload-category sidebar (Summary highlighted, Apps with badge 2, Books, Bookmarks, Scripts, Resources). Right: a list of two Applivery system apps and below an 'Assigned devices' header with a '+ Assign to device' button next to a Search field.">
+    <figcaption>Policy detail after import. <em>Assigned devices</em> is what binds this policy to a specific Mac.</figcaption>
+  </figure>
+    </li>
+
+    <li>A modal opens asking which device to apply the policy to. Click the <em>Select a device</em> dropdown and pick your Mac (yours will look something like "MacBookPro (16-inch, 2024) — macOS 15.6"). Confirm.
+
+  <figure>
+    <img src="screenshots/applivery-assign-modal.png" alt="Applivery 'Assign policy to device' modal with a Device dropdown opened, showing a highlighted entry 'MackBookPro (16-inch, 2024) — macOS 15.6' with a blue Apple-logo badge.">
+    <figcaption>Pick your Mac from the dropdown. Within ~30 seconds Applivery pushes the configuration.</figcaption>
+  </figure>
+    </li>
+
+    <li>Wait ~30 seconds, then verify on your Mac: open <em>System Settings → Privacy &amp; Security → Profiles</em>. The DoH-disable profile from <a href="#browsers">§ 09</a> should now show as protected by an MDM-managed removal password. Trying to remove it will prompt for a password you don't have.</li>
+
+    <li>Throw the password away. Hand the paper to your accountability partner, or burn it. Same as the other passwords in this guide — the point is that future-you cannot reach it.</li>
   </ol>
 
   <p>In the Applivery <em>Devices</em> list, the policy you just applied will show in the "POLICIES" column for your Mac — for example, "Remove Protect". That's the audit trail; it's how you confirm the policy is bound to the device.</p>
