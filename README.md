@@ -2,7 +2,7 @@
 
 A defense-in-depth setup for blocking gambling sites and apps on your own devices, designed by someone who needed it and is releasing it anonymously so other people don't have to figure it out alone.
 
-## Start here
+## [Start here](https://stayout-gambling.github.io/stayout-gambling/guide.html)
 
 **Open `guide.html` in any web browser.** That's the entire setup walkthrough, from sign-up to lockdown, written for both non-technical users and software engineers. About a 30-minute read; about 3 hours to actually execute.
 
