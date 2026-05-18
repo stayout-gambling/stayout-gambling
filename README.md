@@ -1,4 +1,4 @@
-# A self-exclusion stack for macOS and iOS
+# stayout-gambling
 
 A defense-in-depth setup for blocking gambling sites and apps on your own devices, designed by someone who needed it and is releasing it anonymously so other people don't have to figure it out alone.
 
@@ -11,6 +11,7 @@ A defense-in-depth setup for blocking gambling sites and apps on your own device
 ```
 .
 ├── guide.html                                  ← Open this first
+├── LICENSE                                     MIT (full text)
 │
 ├── cloudflare/
 │   ├── migrate_to_lists.py                     Bulk-create 63 CF Gateway Lists + DNS rule
@@ -51,7 +52,7 @@ A defense-in-depth setup for blocking gambling sites and apps on your own device
 
 ## License
 
-MIT-style permissive. Use it, fork it, redistribute it, fold it into your own guide. Just don't sell it as a packaged product.
+MIT. Full text in [`LICENSE`](LICENSE). Use it, fork it, redistribute it, fold it into your own guide.
 
 ## Maintenance & contributions
 
